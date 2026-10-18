@@ -107,8 +107,8 @@ function seeded(seed = 12345) {
 }
 const makeAlbum = (seed = 12345, initial = animals[0]) => new AnimalAlbum(initial, { random: seeded(seed) });
 
-test('N includes the two bears and the bat', () => {
-  assert.deepEqual(animals.filter(a => a.inputKey === 'n').map(a => a.name).sort(), ['niedźwiedź','niedźwiedź polarny','nietoperz'].sort());
+test('N reaches the rhino alongside both bears and the bat', () => {
+  assert.deepEqual(animals.filter(a => a.inputKey === 'n').map(a => a.name).sort(), ['niedźwiedź','niedźwiedź polarny','nietoperz','nosorożec'].sort());
 });
 
 test('session starts are random across the whole catalogue and reset avoids the previous animal', () => {

@@ -18,7 +18,7 @@ test('every animal has a habitat and scenery can be removed without changing the
 });
 
 test('representative animals appear in their matching environment', () => {
-  for (const [name, expected] of Object.entries({ pantera:'jungle', jaszczurka:'jungle', dziobak:'river', tukan:'jungle', homar:'ocean', fretka:'home', tygrys:'jungle', wielbłąd:'desert', surykatka:'savanna', kura:'farm', kogut:'farm', sarna:'forest', lew:'savanna', delfin:'ocean', koala:'outback', panda:'bamboo', kot:'home', 'niedźwiedź polarny':'polar', 'konik morski':'ocean' })) {
+  for (const [name, expected] of Object.entries({ nosorożec:'savanna', świnia:'farm', osioł:'farm', dzik:'forest', kret:'garden', orzeł:'forest', wróbel:'meadow', gołąb:'garden', mrówka:'meadow', pająk:'garden', osa:'meadow', gąsienica:'garden', pantera:'jungle', jaszczurka:'jungle', dziobak:'river', tukan:'jungle', homar:'ocean', fretka:'home', tygrys:'jungle', wielbłąd:'desert', surykatka:'savanna', kura:'farm', kogut:'farm', sarna:'forest', lew:'savanna', delfin:'ocean', koala:'outback', panda:'bamboo', kot:'home', 'niedźwiedź polarny':'polar', 'konik morski':'ocean' })) {
     assert.equal(habitatFor(animals.find(a => a.name === name)).id, expected);
   }
 });

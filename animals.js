@@ -92,6 +92,18 @@ export const animals = [
   ['j', 'jeleń', 'stag', '#b08960'],
   ['t', 'tapir', 'tapir', '#64766c'],
   ['t', 'tukan', 'toucan', '#405e55'],
+  ['n', 'nosorożec', 'rhino', '#9aa69a'],
+  ['ś', 'świnia', 'pig', '#d7aaa0'],
+  ['o', 'osioł', 'donkey', '#a6aea1'],
+  ['d', 'dzik', 'boar', '#978265'],
+  ['k', 'kret', 'mole', '#827c6e'],
+  ['o', 'orzeł', 'eagle', '#9e815f'],
+  ['w', 'wróbel', 'sparrow', '#b89a74'],
+  ['g', 'gołąb', 'pigeon', '#a5b5af'],
+  ['m', 'mrówka', 'ant', '#aa8466'],
+  ['p', 'pająk', 'spider', '#a19388'],
+  ['o', 'osa', 'wasp', '#d8b353'],
+  ['g', 'gąsienica', 'caterpillar', '#96b36b'],
 ].map(([key, name, kind, color]) => ({ key, inputKey: normalizeAnimalKey(key), name, kind, color }));
 
 // Keep spelling on screen, but make every animal reachable without AltGr.

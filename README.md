@@ -12,7 +12,7 @@ Wspólna, interaktywna zabawa przy ekranie nadal jest czasem ekranowym. Aplikacj
 
 ## Jak korzystać
 
-Album zawiera 88 zwierząt pod 22 klawiszami. Większość liter ma kilka zwierzątek; pod E, I i U jest po jednym. Polskie litery działają też bez AltGr.
+Album zawiera 100 zwierząt pod 22 klawiszami. Większość liter ma kilka zwierzątek; pod E, I i U jest po jednym. Polskie litery działają też bez AltGr.
 
 - Zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i Spacja losują z całego albumu; litera — spośród pasujących nazw. Tasowane pule zapewniają różnorodność i unikają bezpośrednich powtórzeń, gdy jest kilka zwierząt do wyboru. Poruszaj kursorem lub palcem, aby skierować wzrok zwierzątka.
 - Głos, scenerię i czas zabawy ustawia dorosły. Przytrzymanie „Dla rodzica” przez 2 sekundy otwiera pauzę; „Zakończ zabawę” wraca na początek.

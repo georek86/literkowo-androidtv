@@ -1,9 +1,9 @@
 // Quiet, static environments shared by the game and the parent gallery.
 const groups = {
-  forest: ['stag','deer','moose','fox','bear','squirrel','hedgehog','owl','badger','wolf','raccoon','woodpecker','bat'],
-  farm: ['alpaca','cow','goat','horse','foal','sheep','goose','turkey','rooster','hen'],
-  meadow: ['stork','rabbit','butterfly','cicada','moth','ladybug','bee','fly','snail','mouse'],
-  savanna: ['antelope','cheetah','hyena','lion','elephant','giraffe','zebra','meerkat'],
+  forest: ['boar','eagle','stag','deer','moose','fox','bear','squirrel','hedgehog','owl','badger','wolf','raccoon','woodpecker','bat'],
+  farm: ['pig','donkey','alpaca','cow','goat','horse','foal','sheep','goose','turkey','rooster','hen'],
+  meadow: ['ant','wasp','sparrow','stork','rabbit','butterfly','cicada','moth','ladybug','bee','fly','snail','mouse'],
+  savanna: ['rhino','antelope','cheetah','hyena','lion','elephant','giraffe','zebra','meerkat'],
   jungle: ['gorilla','lizard','panther','jaguar','tapir','toucan','monkey','tiger','parrot','sloth','chameleon','peacock'],
   bamboo: ['panda'],
   desert: ['camel'],
@@ -14,7 +14,7 @@ const groups = {
   river: ['platypus','beaver','otter','crayfish'],
   outback: ['emu','kangaroo','koala'],
   home: ['ferret','cat','dog','hamster'],
-  garden: ['snake'],
+  garden: ['mole','pigeon','spider','caterpillar','snake'],
 };
 const labels = { desert:'Na pustyni', forest:'W lesie', farm:'Na farmie', meadow:'Na łące', savanna:'Na sawannie', jungle:'W dżungli', bamboo:'W bambusowym lesie', ocean:'W oceanie', shore:'Nad morzem', polar:'W krainie lodu', pond:'Nad stawem', river:'Nad rzeką', outback:'W Australii', home:'W domu', garden:'W ogrodzie' };
 export function habitatFor(animal) {
