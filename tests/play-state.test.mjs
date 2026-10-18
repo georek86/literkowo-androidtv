@@ -107,9 +107,7 @@ function seeded(seed = 12345) {
 }
 const makeAlbum = (seed = 12345, initial = animals[0]) => new AnimalAlbum(initial, { random: seeded(seed) });
 
-test('each assigned letter offers at least three animals, including three under N', () => {
-  const keys = new Set(animals.map(a => a.inputKey));
-  for (const key of keys) assert.ok(animals.filter(a => a.inputKey === key).length >= 3, key);
+test('N includes the two bears and the bat', () => {
   assert.deepEqual(animals.filter(a => a.inputKey === 'n').map(a => a.name).sort(), ['niedźwiedź','niedźwiedź polarny','nietoperz'].sort());
 });
 
@@ -137,7 +135,7 @@ test('letter bags shuffle, cover their whole group and avoid repeats across bag 
       for (let i = 0; i < group.length; i++) {
         const animal = album.next(key);
         assert.equal(animal.inputKey, key);
-        assert.notEqual(animal, previous, key);
+        if (group.length > 1) assert.notEqual(animal, previous, key);
         seen.add(animal); previous = animal;
       }
       assert.deepEqual(seen, new Set(group), key);
@@ -173,12 +171,12 @@ test('unassigned keys share a shuffled full-album bag and retain the actual anim
   }
 });
 
-test('mixing letter selection with album selection never repeats the visible animal', () => {
+test('mixing pools avoids repeats whenever another matching animal is available', () => {
   const album = makeAlbum();
   let previous = album.current;
   for (let i = 0; i < 1500; i++) {
     const animal = album.next(i % 3 ? previous.inputKey : ' ');
-    assert.notEqual(animal, previous);
+    if (animals.filter(a => a.inputKey === previous.inputKey).length > 1 || i % 3 === 0) assert.notEqual(animal, previous);
     previous = animal;
   }
   const initial = animalForKey('n');
@@ -245,4 +243,11 @@ test('ASCII keys reach every animal and accented aliases share the same shuffled
     for (let i = 0; i < group.length; i++) seen.add(album.next(key));
   }
   assert.equal(seen.size, animals.length, 'no animal requires AltGr');
+});
+
+test('a letter with one familiar animal continues to return it without an empty choice', () => {
+  const album = makeAlbum();
+  for (const key of ['e','i','u']) {
+    for (let i = 0; i < 5; i++) assert.equal(album.next(key), animalForKey(key));
+  }
 });

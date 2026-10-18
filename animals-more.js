@@ -1,34 +1,33 @@
 import { ellipse as e, path as p, line as l, eyes, eye, smile, cream } from './animal-art.js';
 
 // Rounded shapes and the shared eyes keep the new species in the album's style.
-function antelope(c, { eland = false, stag = false } = {}) {
+function antelope(c, { stag = false } = {}) {
   const dark = '#74624b';
   let art = l('M113 151Q83 156 83 182', dark, 7);
   art += [127,187].map(x => p(`M${x} 163l-4 66h10l9-65Z`, '#947858')).join('');
-  art += e(166,151,64,eland ? 39 : 31,c) + p('M205 156Q226 120 221 87L246 83L245 164Z',c);
+  art += e(166,151,64,31,c) + p('M205 156Q226 120 221 87L246 83L245 164Z',c);
   art += p('M117 162Q164 183 210 158L199 175Q148 188 117 171Z',cream);
   art += [112,209].map(x => p(`M${x} 166l3 68h12l2-68Z`,c)+l(`M${x+4} 230h8`,dark,7)).join('');
   if (stag) art += l('M224 71L207 40L198 18M211 47L192 37M206 36L216 19M247 70L270 42L277 18M266 47L289 38M274 32L263 19',dark,6);
-  else art += l(eland ? 'M226 69Q207 39 223 21M247 69Q265 39 250 21' : 'M226 69Q202 41 215 15M247 69Q272 41 259 15',dark,7);
-  if (eland) art += l('M215 36l9-3m-9 14 10-3m27-8-9-3m9 14-10-3','#b7a180',3);
+  else art += l('M226 69Q202 41 215 15M247 69Q272 41 259 15',dark,7);
   art += e(210,78,19,9,c,'transform="rotate(24 210 78)"')+e(263,78,19,9,c,'transform="rotate(-24 263 78)"');
   art += e(237,99,27,34,c)+p('M231 91h12l5 30-11 13-11-13Z',cream);
-  if (eland) art += p('M222 124L231 155L244 134Z','#c4a17a');
   art += eyes(225,249,97)+e(237,124,7,4,dark)+smile(237,133);
   return art;
 }
 
 function spottedCat(kind,c) {
-  const snow = kind === 'snowLeopard', cheetah = kind === 'cheetah';
-  const dark = snow ? '#687575' : '#756044';
-  let art = l(snow ? 'M222 208Q304 226 288 158Q282 139 265 147' : 'M222 209Q288 227 280 173',c,snow ? 21 : 13);
-  art += e(185,178,cheetah ? 40 : 53,60,c)+e(185,186,28,43,cream);
+  const panther = kind === 'panther', cheetah = kind === 'cheetah';
+  const dark = panther ? '#344b43' : '#756044';
+  let art = l(panther ? 'M222 208Q304 226 288 158Q282 139 265 147' : 'M222 209Q288 227 280 173',c,panther ? 21 : 13);
+  const muzzle = panther ? '#829186' : cream;
+  art += e(185,178,cheetah ? 40 : 53,60,c)+e(185,186,28,43,muzzle);
   art += e(150,229,24,11,c)+e(220,229,24,11,c);
   for (const [x,y] of [[146,159],[139,183],[151,207],[222,159],[231,185],[219,210],[278,190],[275,169]]) {
-    art += snow || !cheetah ? e(x,y,5,4,c,`stroke="${dark}" stroke-width="2.5"`) : e(x,y,3,3,dark);
+    art += !cheetah ? e(x,y,5,4,c,`stroke="${dark}" stroke-width="2.5"`) : e(x,y,3,3,dark);
   }
   art += e(143,64,19,21,c)+e(227,64,19,21,c)+e(143,64,10,12,dark)+e(227,64,10,12,dark);
-  art += e(185,101,55,48,c)+e(169,130,19,14,cream)+e(201,130,19,14,cream);
+  art += e(185,101,55,48,c)+e(169,130,19,14,muzzle)+e(201,130,19,14,muzzle);
   for (const [x,y] of [[156,78],[180,66],[209,76],[139,108],[230,109]]) art += cheetah ? e(x,y,3,3,dark) : e(x,y,5,4,c,`stroke="${dark}" stroke-width="2.5"`);
   if (cheetah) art += l('M161 116L155 134M209 116L215 134',dark,4);
   art += eyes()+p('M177 122Q185 117 193 122L185 129Z',dark)+l('M185 129v5q-8 7-15 0m15 0q8 7 15 0',dark,2);
@@ -67,7 +66,7 @@ function platypus(c) {
     +e(231,140,42,35,c)+eyes(216,244,133)+p('M229 150Q275 140 292 158Q301 177 268 183L225 171Z','#c0a36b')
     +l('M246 165q21 6 39-1','#937c53',2)+e(266,155,2,2,'#726744')+e(281,158,2,2,'#726744');
 }
-function iguana(c) {
+function lizard(c) {
   return l('M151 187Q65 224 83 157Q93 128 108 149',c,19)
     +p('M116 152L126 127L140 144L152 115L168 138L185 112L201 139L218 120L234 145Z','#6b8b50')
     +e(177,166,64,36,c)+p('M143 175l-20 40-18 8m91-48 18 39 19 8','none',`stroke="${c}" stroke-width="14"`)
@@ -76,30 +75,12 @@ function iguana(c) {
     +eyes(234,258,128)+e(278,140,2,2,'#53734b')+l('M253 155q13 6 25-1','#53734b',2)
     +[145,167,190].map(x=>l(`M${x} 153l-8 28`,'#6e9257',5)).join('');
 }
-function anaconda(c) {
-  return p('M102 220C61 182 114 145 161 163C204 180 189 207 238 202C280 198 275 167 257 143L280 126C326 177 294 243 237 239C181 236 175 203 140 198C118 195 113 208 128 220Z',c)
-    +p('M117 213Q101 187 141 181Q176 179 200 210Q223 238 270 221','none','stroke="#c5cd8c" stroke-width="8"')
-    +[[102,181],[133,169],[166,179],[191,201],[222,222],[254,215],[284,190],[279,161]].map(([x,y])=>e(x,y,6,8,'#53734e')).join('')
-    +p('M251 152Q230 120 239 92L274 85L287 141Z',c)+e(258,91,44,32,c)+e(258,106,36,15,'#bbc986')
-    +eyes(239,273,85)+e(247,106,2,2,'#53734e')+e(269,106,2,2,'#53734e')+smile(258,116);
-}
-function eider(c) {
-  return e(150,232,22,6,'#ac9162')+e(217,232,22,6,'#ac9162')+p('M111 176L86 148L131 155Q174 130 219 150L232 102L256 108Q273 194 224 215Q141 243 111 176Z','#465b54')
-    +p('M119 158Q164 125 219 147L227 111L248 113L236 170Q184 191 119 158Z',c)+e(236,101,33,31,c)
-    +p('M208 87Q226 61 251 79L259 90L230 91L219 112L208 106Z','#465b54')+p('M212 109l18 6-9 17-12-7Z','#9fb58b')
-    +p('M258 94L302 110L301 121L256 116Z','#acb47e')+e(176,170,33,18,c,'transform="rotate(-10 176 170)"')+eye(246,99);
-}
 function toucan(c) {
   return l('M112 224H269','#947855',7)+p('M158 180L149 242L173 232L191 239L198 181Z',c)
     +e(183,151,41,64,c)+e(187,94,34,38,c)+e(200,122,22,33,cream)+p('M211 74Q262 45 310 90Q324 116 299 122L215 111Z','#ddb551')
     +p('M270 67Q305 73 312 95L306 114L280 111Z','#cb8155')+p('M302 83Q329 107 306 121L294 118Z','#4a6158')
     +l('M223 103L299 109','#957b48',2)+eye(199,88)+p('M161 126Q137 169 172 195Q193 166 176 134Z','#5a7770')
     +l('M176 220v7m17-7v7','#af9662',5);
-}
-function bleak(c) {
-  return p('M244 151L307 114L289 151L307 188L244 171Z',c)+p('M170 134L197 104L214 134M176 175L204 199L217 176Z','#92a9a8')
-    +p('M79 153Q153 102 250 145Q261 153 250 171Q147 200 79 160Z',c)+p('M89 155Q165 156 250 151Q187 176 98 164Z','#e9eee1')
-    +l('M139 135q-12 19 0 37','#809b9b',3)+eye(109,150)+l('M82 159l12 1','#698485',2)+l('M185 148l-17 17 27-7','#91abaa',3);
 }
 function lobster(c) {
   let art = ['M166 132L128 119L110 134','M166 153L128 151L108 170','M167 174L136 185L121 211','M204 132L242 119L260 134','M204 153L242 151L262 170','M203 174L234 185L249 211'].map(d=>l(d,c,7)).join('');
@@ -108,17 +89,8 @@ function lobster(c) {
   art += [174,189,204].map(y=>l(`M163 ${y}q22 12 44 0`,'#975f4d',3)).join('')+l('M172 98Q144 49 164 30M198 98Q226 49 206 30','#975f4d',3)+eyes(173,197,113)+smile(185,137);
   return art;
 }
-function anemone(c) {
-  let art = '';
-  for (let i = 0; i < 9; i++) {
-    const x = 96+i*22, y = 90+Math.abs(4-i)*10;
-    art += l(`M${130+i*14} 190Q${x-20} 145 ${x} ${y}Q${x+15} ${y-28} ${x-3} ${y-39}`,i%2 ? '#cda0a2' : c,13);
-  }
-  art += p('M135 180Q185 162 235 180L226 227Q185 245 144 227Z',c)+e(185,183,50,17,'#e1bcb1')+eyes(168,202,202)+smile(185,219);
-  return art;
-}
 export const moreIllustrations = {
-  antelope: c => antelope(c), eland: c => antelope(c,{eland:true}), stag: c => antelope(c,{stag:true}),
-  cheetah: c => spottedCat('cheetah',c), jaguar: c => spottedCat('jaguar',c), snowLeopard: c => spottedCat('snowLeopard',c),
-  ferret, gorilla, hyena, tapir, platypus, iguana, anaconda, eider, toucan, bleak, lobster, anemone,
+  antelope: c => antelope(c), stag: c => antelope(c,{stag:true}),
+  cheetah: c => spottedCat('cheetah',c), jaguar: c => spottedCat('jaguar',c), panther: c => spottedCat('panther',c),
+  ferret, gorilla, hyena, tapir, platypus, lizard, toucan, lobster,
 };

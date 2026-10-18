@@ -10,6 +10,7 @@ let voice;
 let utterance;
 let speechTimer;
 let speechVersion = 0;
+const animalCount = count => `${count} ${count === 1 ? 'zwierzątko' : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? 'zwierzątka' : 'zwierzątek'}`;
 const letters = [...new Set(animals.map(animal => animal.inputKey))];
 for (const letter of letters) $('letter-filter').add(new Option(letter.toLocaleUpperCase('pl'), letter));
 
@@ -52,12 +53,14 @@ const cards = animals.map(animal => {
   card.className = 'animal-card';
   const group = animals.filter(item => item.inputKey === animal.inputKey);
   // All markup values originate in the game's local animal catalogue.
-  card.innerHTML = `<button class="animal-preview" type="button" aria-label="Powiększ: ${animal.name}">${draw(animal)}</button><div class="card-details"><div class="card-heading"><h2>${animal.name}</h2><kbd>${animal.inputKey.toUpperCase()}</kbd></div><p>${group.length} zwierząt pod klawiszem ${animal.inputKey.toUpperCase()} · ${habitatFor(animal).label.toLocaleLowerCase('pl')}</p><button data-listen type="button" aria-label="Posłuchaj: ${animal.name}">Posłuchaj nazwy</button></div>`;
+  card.innerHTML = `<button class="animal-preview" type="button" aria-label="Powiększ: ${animal.name}">${draw(animal)}</button><div class="card-details"><div class="card-heading"><h2>${animal.name}</h2><kbd>${animal.inputKey.toUpperCase()}</kbd></div><p>${animalCount(group.length)} pod klawiszem ${animal.inputKey.toUpperCase()} · ${habitatFor(animal).label.toLocaleLowerCase('pl')}</p><button data-listen type="button" aria-label="Posłuchaj: ${animal.name}">Posłuchaj nazwy</button></div>`;
   card.querySelector('.animal-preview').addEventListener('click', () => {
     previewAnimal = animal;
     $('preview-title').textContent = animal.name;
     $('preview-image').innerHTML = draw(animal);
-    $('preview-key').textContent = `Klawisz ${animal.inputKey.toUpperCase()} · losowanie spośród ${group.length} zwierząt`;
+    $('preview-key').textContent = group.length === 1
+      ? `Klawisz ${animal.inputKey.toUpperCase()} · ${animal.name}`
+      : `Klawisz ${animal.inputKey.toUpperCase()} · losowanie spośród ${group.length} zwierząt`;
     $('preview').showModal();
   });
   card.querySelector('[data-listen]').addEventListener('click', () => listen(animal));
