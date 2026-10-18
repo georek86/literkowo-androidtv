@@ -70,3 +70,6 @@ body.playing .animal-label h2{font-size:clamp(25px,4vw,40px)}
 @media(max-height:500px) and (min-width:621px){body.playing .illustration{width:210px}body.playing .big-letter{font-size:65px}}
 
 body.playing main{touch-action:none;overscroll-behavior:none}
+
+.screen-note{max-width:410px;font-size:12px;line-height:1.65;color:#53634d;margin:0 0 24px}.screen-note a{white-space:nowrap}
+@media(max-width:620px){.screen-note{margin:0 auto 24px}}

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f3eb">
-  <meta name="description" content="Spokojny album zwierząt do wspólnej zabawy z dzieckiem.">
+  <meta name="description" content="Interaktywna zabawa rodzica lub opiekuna z dzieckiem — wspólne poznawanie zwierzątek.">
   <title>Literkowo — małe spotkania ze zwierzętami</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='20' fill='%23e6ebdd'/%3E%3Ctext x='18' y='47' font-size='45' fill='%234c6652'%3El%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="./style.css">
@@ -21,9 +21,10 @@
     <section class="welcome" id="welcome" aria-labelledby="welcome-title">
       <span class="eyebrow"><span class="tiny-leaf" aria-hidden="true"></span> SPOKOJNA ZABAWA RAZEM</span>
       <h1 id="welcome-title">Mała literka.<br>Wielkie <em>odkrycie.</em></h1>
-      <p class="intro">Dotknij ekranu lub naciśnij klawisz.<br>Poznajcie zwierzątka. We własnym tempie.</p>
+      <p class="intro">Interaktywna zabawa rodzica z dzieckiem.<br>Dotknij ekranu lub naciśnij klawisz.</p>
       <button class="primary-button" id="start" type="button">Zaczynamy <span aria-hidden="true">↗</span></button>
-      <p class="start-note">Najlepiej razem, na kolanach u rodzica.</p>
+      <p class="start-note">Wyłącznie wspólnie i pod nadzorem opiekuna.</p>
+      <p class="screen-note" id="screen-note">WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2 lat. Wspólna zabawa również jest czasem ekranowym. <a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></p>
       <div class="welcome-options">
         <label class="switch-label"><input id="sound" type="checkbox"><span class="switch" aria-hidden="true"></span> Głos lektora</label>
         <label class="switch-label"><input id="fullscreen" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Pełny ekran i blokada</label>
@@ -75,12 +76,13 @@
   <dialog id="settings" aria-labelledby="settings-title">
     <form method="dialog"><button class="close-button" aria-label="Zamknij ustawienia">×</button></form>
     <span class="eyebrow">CHWILA DLA WAS</span><h2 id="settings-title">Dla rodzica</h2>
-    <p class="dialog-intro">Prosta zabawa w odkrywanie. Jedno zwierzątko i jedna reakcja naraz.</p>
-    <div class="setting-info"><strong>Małe odkrycia dotykiem i klawiaturą</strong><p>Dotknij obszaru zabawy lub kliknij myszą, aby przejść do kolejnego zwierzątka. Przesuwanie palcem delikatnie porusza jego oczami. Dodatkowe palce i szybkie stuknięcia są pomijane. Pełne kółko pod zwierzątkiem oznacza gotowość. Podczas wypowiedzi kółko czeka, a potem spokojnie się wypełnia. Ta sama litera pokazuje kolejne pasujące zwierzątka — np. K: kot, kaczka, krowa, królik, koza, koń, krab. Zwykłe Z pokazuje też żółwia i źrebaka, S — ślimaka, L — łosia, a C — ćmę. Nie trzeba używać AltGr. Spacja, Enter, strzałki i klawisze bez przypisanego zwierzątka przechodzą dalej w albumie. Shift, Ctrl i Alt same nie zmieniają obrazka.</p></div>
+    <p class="dialog-intro">Interaktywna zabawa rodzica lub opiekuna z dzieckiem. Korzystajcie wyłącznie razem, pod stałym nadzorem dorosłego.</p>
+    <div class="setting-info"><strong>Małe odkrycia dotykiem i klawiaturą</strong><p>Każda zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i klawisze bez przypisanej litery losują z całego albumu. Litera losuje wśród pasujących nazw, np. N: niedźwiedź, niedźwiedź polarny lub nietoperz. Kolejność jest tasowana, aby pokazać różne zwierzątka i unikać powtórzeń jedno po drugim. Nie trzeba używać AltGr: C obejmuje też Ć, L — Ł, S — Ś, a Z — Ź i Ż. Pełne kółko oznacza gotowość do kolejnego odkrycia; szybkie stuknięcia, dodatkowe palce i przytrzymane klawisze są pomijane.</p></div>
     <label class="setting-row" for="setting-scenery"><span>Zmienna sceneria<small>Dopasowane otoczenie zwierzątka, np. las lub sawanna. Wyłącz, aby pokazywać jednolite tło.</small></span><input id="setting-scenery" type="checkbox" checked></label>
     <label class="setting-row" for="duration"><span>Czas jednej zabawy<small>Po tym czasie zwierzątka odpoczną.</small></span><select id="duration"><option value="2">2 minuty</option><option value="3" selected>3 minuty</option><option value="5">5 minut</option></select></label>
     <div class="setting-info"><strong>Klawiatura i pełny ekran</strong><p id="lock-status">Gdy wybierzesz „Pełny ekran i blokada”, gra wystartuje dopiero po włączeniu obu funkcji.</p><p>Gra prosi przeglądarkę o przechwycenie wszystkich dostępnych jej klawiszy. Windows/Super, Alt+Tab i inne skróty mogą jednak pozostać zarezerwowane przez system. Ich dodatkowa blokada wymaga ustawień systemowych. Sam pełny ekran ani F11 jej nie zapewniają.</p><p>W Chrome przytrzymaj Esc przez około 2 sekundy, aby wyjść z pełnego ekranu. Możesz też przytrzymać przycisk rodzica. Przycisku zasilania strona nie blokuje.</p></div>
-    <div class="setting-info"><strong>Spokojnie i wspólnie</strong><p>Dla dzieci w wieku 12–18 miesięcy WHO nie zaleca czasu ekranowego. Ta zabawa nie zastępuje kontaktu z opiekunem. Ustawiony czas nie jest zaleceniem zdrowotnym.</p><a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></div>
+    <div class="setting-info"><strong>Dzieci i ekrany</strong><p>WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2. roku życia. Dla dzieci w wieku 2–4 lat zaleca nie więcej niż godzinę dziennie — im mniej, tym lepiej.</p><p>Wspólna, interaktywna zabawa przy ekranie nadal jest czasem ekranowym. Aplikacja nie zastępuje zabawy bez ekranu ani kontaktu z opiekunem. Nie jest narzędziem terapeutycznym i nie ma potwierdzonej skuteczności edukacyjnej. Ustawienia timera nie są zaleceniem zdrowotnym.</p><a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></div>
+    <div class="setting-info" id="responsibility"><strong>Odpowiedzialność</strong><p>Aplikacja jest udostępniana „tak jak jest”, bez gwarancji poprawności, dostępności, przydatności do określonego celu ani korzyści zdrowotnych, rozwojowych lub edukacyjnych. Decyzję o udostępnieniu jej dziecku, sposobie i czasie korzystania podejmuje rodzic lub opiekun.</p><p>W najszerszym zakresie dopuszczalnym przez obowiązujące prawo autorzy i współtwórcy wyłączają odpowiedzialność za szkody wynikające z korzystania z aplikacji lub niemożności jej użycia, w tym szkody dotyczące zdrowia, rozwoju dziecka, sprzętu lub danych. Zastrzeżenie to nie wyłącza ani nie ogranicza odpowiedzialności, której nie można wyłączyć lub ograniczyć na mocy prawa.</p></div>
     <p class="privacy-note">Bez reklam, kont i śledzenia. Dostępność polskiego głosu i jego działanie offline zależą od przeglądarki oraz systemu.</p>
     <button class="primary-button" id="settings-done" type="button">Gotowe</button>
   </dialog>

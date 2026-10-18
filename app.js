@@ -1,4 +1,4 @@
-import { animalForKey, AnimalAlbum, illustration } from './animals.js';
+import { AnimalAlbum, illustration } from './animals.js';
 import { updateGaze, resetGaze } from './gaze.js';
 import { habitatFor } from './habitats.js';
 import { isAnimalInput, PlayState } from './play-state.js';
@@ -8,8 +8,8 @@ const $ = id => document.getElementById(id);
 const state = new PlayState();
 const synth = window.speechSynthesis;
 let phase = 'welcome';
-let currentAnimal = animalForKey('k');
-const album = new AnimalAlbum(currentAnimal);
+const album = new AnimalAlbum();
+let currentAnimal = album.current;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 // Touch-first devices start in a window without requiring keyboard protection.
 if (window.matchMedia('(pointer: coarse)').matches) {
@@ -249,7 +249,6 @@ async function begin(resuming = false) {
   $('paused').close();
   $('protection-error').hidden = true;
   if (!resuming) {
-    album.reset(currentAnimal);
     remaining = Number($('duration').value) * 60_000;
     wantsFullscreen = $('fullscreen').checked;
   }
@@ -273,6 +272,7 @@ async function begin(resuming = false) {
     }
     return;
   }
+  if (!resuming) showAnimal(album.reset(), false);
   $('welcome').hidden = true;
   $('finish').hidden = true;
   $('play-instructions').hidden = false;
@@ -366,7 +366,7 @@ function returnToWelcome() {
   $('parent-button').textContent = 'Dla rodzica';
   $('parent-button').setAttribute('aria-label', 'Dla rodzica');
   $('lock-status').textContent = 'Zabawa jest zakończona. Blokada klawiatury jest zwolniona.';
-  showAnimal(animalForKey('k'), false);
+  showAnimal(album.reset(), false);
   $('start').focus();
 }
 $('settings-done').addEventListener('click', () => $('settings').close());

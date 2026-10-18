@@ -102,3 +102,11 @@ test('tracking resumes immediately after a cancelled frame and ignores a stale c
   callbacks[1]();
   assert.ok(parseFloat(values.get('--look-x')) > 0);
 });
+
+// These front-facing heads must keep both eyes visible.
+test('horse, foal and moose each expose two tracking eyes', () => {
+  for (const kind of ['horse','foal','moose']) {
+    const svg = illustration(animals.find(a => a.kind === kind));
+    assert.equal([...svg.matchAll(/class="eye"/g)].length, 2, kind);
+  }
+});

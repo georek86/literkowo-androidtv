@@ -1,22 +1,23 @@
 // Quiet, static environments shared by the game and the parent gallery.
 const groups = {
-  forest: ['deer','moose','fox','bear','squirrel','hedgehog','owl','badger','wolf','raccoon','woodpecker','bat'],
+  forest: ['stag','deer','moose','fox','bear','squirrel','hedgehog','owl','badger','wolf','raccoon','woodpecker','bat'],
   farm: ['alpaca','cow','goat','horse','foal','sheep','goose','turkey','rooster','hen'],
   meadow: ['stork','rabbit','butterfly','cicada','moth','ladybug','bee','fly','snail','mouse'],
-  savanna: ['lion','elephant','giraffe','zebra','meerkat'],
-  jungle: ['monkey','tiger','parrot','sloth','chameleon','peacock'],
+  savanna: ['antelope','eland','cheetah','hyena','lion','elephant','giraffe','zebra','meerkat'],
+  jungle: ['anaconda','gorilla','iguana','jaguar','tapir','toucan','monkey','tiger','parrot','sloth','chameleon','peacock'],
   bamboo: ['panda'],
   desert: ['camel'],
-  ocean: ['dolphin','whale','orca','shark','octopus','fish','seahorse','jellyfish'],
-  shore: ['seal','seaLion','crab'],
+  mountains: ['snowLeopard'],
+  ocean: ['lobster','anemone','dolphin','whale','orca','shark','octopus','fish','seahorse','jellyfish'],
+  shore: ['eider','seal','seaLion','crab'],
   polar: ['penguin','polarBear'],
   pond: ['frog','duck','swan','flamingo','turtle','hippo','crocodile'],
-  river: ['beaver','otter','crayfish'],
+  river: ['platypus','bleak','beaver','otter','crayfish'],
   outback: ['emu','kangaroo','koala'],
-  home: ['cat','dog','hamster'],
+  home: ['ferret','cat','dog','hamster'],
   garden: ['snake'],
 };
-const labels = { desert:'Na pustyni', forest:'W lesie', farm:'Na farmie', meadow:'Na łące', savanna:'Na sawannie', jungle:'W dżungli', bamboo:'W bambusowym lesie', ocean:'W oceanie', shore:'Nad morzem', polar:'W krainie lodu', pond:'Nad stawem', river:'Nad rzeką', outback:'W Australii', home:'W domu', garden:'W ogrodzie' };
+const labels = { mountains:'W górach', desert:'Na pustyni', forest:'W lesie', farm:'Na farmie', meadow:'Na łące', savanna:'Na sawannie', jungle:'W dżungli', bamboo:'W bambusowym lesie', ocean:'W oceanie', shore:'Nad morzem', polar:'W krainie lodu', pond:'Nad stawem', river:'Nad rzeką', outback:'W Australii', home:'W domu', garden:'W ogrodzie' };
 export function habitatFor(animal) {
   const entry = Object.entries(groups).find(([, kinds]) => kinds.includes(animal.kind));
   if (!entry) throw new Error(`Brak scenerii: ${animal.kind}`);
@@ -29,6 +30,7 @@ const tree = (x,y,s=1) => `<g transform="translate(${x} ${y}) scale(${s})">${p('
 const grass = (x,y,c='#8fa571') => stroke(`M${x} ${y}l-8-18m8 18 3-24m-3 24 12-13`,c,3);
 const reed = (x,y) => stroke(`M${x} ${y}v-68m0 50q-17-32-24-28m24 37q17-34 24-29`,'#6f956d',3)+stroke(`M${x} ${y-67}v-16`,'#a48250',6);
 const palettes = {
+  mountains:['#e4edf0','#bec7ab'],
   desert:['#f7ecd8','#e4c38f'],
   forest:['#e4eee4','#bdcf9d'], farm:['#e9f1ec','#c8d6a0'], meadow:['#eaf2e7','#d4dea9'],
   savanna:['#f6edd4','#e3cc8d'], jungle:['#e0ede4','#bad2a4'], bamboo:['#e7f0df','#c7d8a6'],
@@ -66,6 +68,11 @@ export function habitatArt(animal) {
     art += p('M0 245Q90 229 177 249T370 238V270H0Z','#e6d8b7');
     art += stroke('M24 253Q10 216 28 186M39 252Q55 214 39 198M335 249Q354 219 341 184','#83aaa0',6);
     art += e(38,90,5,5,'#f0f8f5')+e(325,118,7,7,'#f0f8f5')+e(336,98,3,3,'#f0f8f5');
+  } else if (id === 'mountains') {
+    art += p('M0 197L62 58L135 166L205 83L290 168L334 108L370 174V222H0Z','#aebfc0');
+    art += p('M35 117L62 58L99 112L77 103L61 117L49 100Z','#f5f5e9');
+    art += p('M177 125L205 83L235 125L214 116L201 130L190 113Z','#f5f5e9');
+    art += p('M0 230Q86 203 160 225T370 222V270H0Z','#cbd0b7')+e(36,239,25,10,'#97a6a0')+e(331,238,21,13,'#a3b1a7');
   } else if (id === 'polar') {
     art += p('M0 181L47 120L98 181L128 156L168 191L270 177L311 130L370 174V219H0Z','#bed5df');
     art += p('M0 220Q89 200 185 222T370 212V270H0Z','#f7faf5')+stroke('M10 252h65m217-8h64','#b6d2dc',2);

@@ -102,70 +102,114 @@ test('indicator waits through short, long, and failed speech, then fills the act
   }
 });
 
-test('letter groups cycle in a fixed order and remember their position independently', () => {
-  const album = new AnimalAlbum();
-  assert.equal(album.next('K').name, 'kot');
-  assert.equal(album.next('k').name, 'kaczka');
-  assert.equal(album.next('P').name, 'pies');
-  assert.equal(album.next('k').name, 'krowa');
-  assert.equal(album.next('K').name, 'królik');
-  assert.equal(album.next('k').name, 'koza');
-  assert.equal(album.next('k').name, 'koń');
-  assert.equal(album.next('k').name, 'krab');
-  for (const name of ['koala','kangur','kogut','krokodyl','kameleon','konik morski','kura','kot']) assert.equal(album.next('k').name, name);
-  assert.equal(album.next('p').name, 'panda');
-  assert.equal(album.next('P').name, 'papuga');
-  assert.equal(album.next('p').name, 'pingwin');
-  assert.equal(album.next('p').name, 'pszczoła');
-  assert.equal(album.next('p').name, 'paw');
-  assert.equal(album.next('p').name, 'pies');
-  assert.deepEqual(['s','s','s','s','s','s','s'].map(key => album.next(key).name), ['sowa','słoń','sarna','ślimak','szop','surykatka','sowa']);
-  assert.equal(album.next('Z').name, 'zebra');
-  assert.equal(album.next('ź').name, 'źrebak');
-  assert.equal(album.next('Ż').name, 'żaba');
-  assert.equal(album.next('ż').name, 'żółw');
-  assert.equal(album.next('ż').name, 'żyrafa');
-  assert.equal(album.next('ż').name, 'zebra');
-  assert.equal(album.next('Ś').name, 'słoń');
-  album.reset();
-  assert.equal(album.next('K').name, 'kot');
+function seeded(seed = 12345) {
+  return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+}
+const makeAlbum = (seed = 12345, initial = animals[0]) => new AnimalAlbum(initial, { random: seeded(seed) });
+
+test('each assigned letter offers at least three animals, including three under N', () => {
+  const keys = new Set(animals.map(a => a.inputKey));
+  for (const key of keys) assert.ok(animals.filter(a => a.inputKey === key).length >= 3, key);
+  assert.deepEqual(animals.filter(a => a.inputKey === 'n').map(a => a.name).sort(), ['niedźwiedź','niedźwiedź polarny','nietoperz'].sort());
 });
 
-test('unassigned keys walk the whole album and retain the real animal initial', () => {
-  const album = new AnimalAlbum(animals.at(-1));
-  const keys = [' ', 'Enter', 'ArrowLeft', '7', 'q', 'x', 'Tab', 'Backspace'];
-  for (let index = 0; index <= animals.length; index++) {
-    const animal = album.next(keys[index % keys.length]);
-    assert.equal(animal, animals[index % animals.length]);
-    assert.equal(animal.name[0], animal.key);
+test('session starts are random across the whole catalogue and reset avoids the previous animal', () => {
+  assert.equal(new AnimalAlbum(undefined, { random: () => 0 }).current, animals[0]);
+  assert.equal(new AnimalAlbum(undefined, { random: () => .999999 }).current, animals.at(-1));
+  const album = new AnimalAlbum(undefined, { random: seeded() });
+  const starts = new Set();
+  for (let i = 0; i < 100; i++) {
+    const previous = album.current;
+    starts.add(album.reset());
+    assert.notEqual(album.current, previous);
+    assert.ok(animals.includes(album.current));
   }
-  album.reset(animalForKey('k'));
-  assert.equal(album.next(' ').name, 'kaczka');
-  assert.equal(album.next('k').name, 'krowa', 'letter follows the last variant shown by any key');
+  assert.ok(starts.size > 30, 'starts must not be pinned to the first animal');
 });
 
-test('rapid or held keys cannot silently skip animals in either sequence', () => {
+test('letter bags shuffle, cover their whole group and avoid repeats across bag boundaries', () => {
+  for (const key of new Set(animals.map(a => a.inputKey))) {
+    const group = animals.filter(a => a.inputKey === key);
+    const album = makeAlbum();
+    let previous = album.current;
+    for (let cycle = 0; cycle < 5; cycle++) {
+      const seen = new Set();
+      for (let i = 0; i < group.length; i++) {
+        const animal = album.next(key);
+        assert.equal(animal.inputKey, key);
+        assert.notEqual(animal, previous, key);
+        seen.add(animal); previous = animal;
+      }
+      assert.deepEqual(seen, new Set(group), key);
+    }
+  }
+  const group = animals.filter(a => a.inputKey === 'k');
+  const sequence = album => group.map(() => album.next('k'));
+  assert.notDeepEqual(sequence(makeAlbum()), group, 'selection must not follow declaration order');
+  assert.notDeepEqual(sequence(makeAlbum(1)), sequence(makeAlbum(2)), 'different randomness changes the order');
+});
+
+test('letter bags keep unconsumed animals when another group is used', () => {
+  const album = makeAlbum();
+  const k = [album.next('k')];
+  album.next('p'); album.next('p');
+  for (let i = 1; i < animals.filter(a => a.inputKey === 'k').length; i++) k.push(album.next('k'));
+  assert.equal(new Set(k).size, k.length);
+});
+
+test('unassigned keys share a shuffled full-album bag and retain the actual animal initial', () => {
+  const album = makeAlbum();
+  const keys = [' ', 'Enter', 'ArrowLeft', '7', 'q', 'x', 'Tab', 'Backspace'];
+  let previous = album.current;
+  for (let cycle = 0; cycle < 3; cycle++) {
+    const seen = new Set();
+    for (let i = 0; i < animals.length; i++) {
+      const animal = album.next(keys[i % keys.length]);
+      assert.notEqual(animal, previous);
+      assert.equal(animal.name[0], animal.key);
+      seen.add(animal); previous = animal;
+    }
+    assert.equal(seen.size, animals.length);
+  }
+});
+
+test('mixing letter selection with album selection never repeats the visible animal', () => {
+  const album = makeAlbum();
+  let previous = album.current;
+  for (let i = 0; i < 1500; i++) {
+    const animal = album.next(i % 3 ? previous.inputKey : ' ');
+    assert.notEqual(animal, previous);
+    previous = animal;
+  }
+  const initial = animalForKey('n');
+  album.reset(initial);
+  assert.equal(album.current, initial);
+  assert.notEqual(album.next('n'), initial);
+});
+
+test('rapid, held and speech-blocked keys do not consume animals or randomness', () => {
   let now = 0;
   const state = new PlayState({ now: () => now });
-  const album = new AnimalAlbum();
+  const album = makeAlbum();
+  const reference = makeAlbum();
   state.start();
   const input = (key, repeat = false) => {
-    if (isAnimalInput({ key }) && state.accept({ repeat })) return album.next(key).name;
+    if (isAnimalInput({ key }) && state.accept({ repeat })) return album.next(key);
     return null;
   };
-  assert.equal(input('k'), 'kot');
+  assert.equal(input('k'), reference.next('k'));
   for (const key of ['k','k','p',' ', 'q']) assert.equal(input(key), null);
   now = 2200;
   assert.equal(input('k', true), null);
-  assert.equal(input('k'), 'kaczka');
+  assert.equal(input('k'), reference.next('k'));
   now = 4400;
-  assert.equal(input('p'), 'pies');
+  assert.equal(input('p'), reference.next('p'));
   state.speaking = true;
   now = 8000;
   assert.equal(input(' '), null);
   state.speechEnded();
   now = 8500;
-  assert.equal(input('Enter'), 'panda');
+  assert.equal(input('Enter'), reference.next('Enter'));
 });
 
 test('modifier keys and shortcuts stay separate from discovery, including Polish input', () => {
@@ -179,33 +223,26 @@ test('modifier keys and shortcuts stay separate from discovery, including Polish
 });
 
 
-test('ASCII keys reach every animal and accented aliases share one cycle', () => {
+test('ASCII keys reach every animal and accented aliases share the same shuffled bag', () => {
   const aliases = { ą:'a', ć:'c', ę:'e', ł:'l', ń:'n', ó:'o', ś:'s', ź:'z', ż:'z' };
   for (const [accent, ascii] of Object.entries(aliases)) {
     assert.equal(normalizeAnimalKey(accent.toUpperCase()), ascii);
+    const album = makeAlbum(), reference = makeAlbum();
+    const group = animals.filter(a => a.inputKey === ascii);
+    const seen = new Set();
+    for (let i = 0; i < group.length * 3; i++) {
+      const animal = album.next(i % 2 ? accent.toUpperCase() : ascii);
+      assert.equal(animal, reference.next(ascii));
+      seen.add(animal);
+    }
+    assert.equal(seen.size, group.length);
   }
   assert.equal(normalizeAnimalKey('S\u0301'), 's');
-  const expected = {
-    c: ['cykada', 'chomik', 'ćma'],
-    l: ['lis', 'lew', 'łoś', 'leniwiec', 'łabędź'],
-    s: ['sowa', 'słoń', 'sarna', 'ślimak', 'szop', 'surykatka'],
-    z: ['zebra', 'źrebak', 'żaba', 'żółw', 'żyrafa'],
-  };
-  for (const [key, names] of Object.entries(expected)) {
-    const album = new AnimalAlbum();
-    assert.deepEqual(names.map(() => album.next(key).name), names);
-    assert.equal(album.next(key).name, names[0]);
-  }
   const seen = new Set();
   for (const key of 'abcdefghijklmnopqrstuvwxyz') {
-    const album = new AnimalAlbum();
-    if (!animalForKey(key)) continue;
-    for (let i = 0; i < animals.length; i++) seen.add(album.next(key).name);
+    const album = makeAlbum();
+    const group = animals.filter(a => a.inputKey === key);
+    for (let i = 0; i < group.length; i++) seen.add(album.next(key));
   }
   assert.equal(seen.size, animals.length, 'no animal requires AltGr');
-  const album = new AnimalAlbum();
-  assert.deepEqual(['z','Ź','ż','Z','Ż','ź'].map(key => album.next(key).name), ['zebra','źrebak','żaba','żółw','żyrafa','zebra']);
-  album.reset(animals.find(a => a.name === 'zebra'));
-  assert.equal(album.next(' ').name, 'źrebak');
-  assert.equal(album.next('z').name, 'żaba', 'album navigation remembers the ASCII group');
 });

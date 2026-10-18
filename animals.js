@@ -1,4 +1,5 @@
 import { ellipse, path, line, cream, paleOutline, eye, eyes, smile } from './animal-art.js';
+import { moreIllustrations } from './animals-more.js';
 import { extendedIllustrations } from './animals-extended.js';
 import { habitatArt } from './habitats.js';
 
@@ -78,6 +79,24 @@ export const animals = [
   ['w', 'wielbłąd', 'camel', '#c9a16b'],
   ['s', 'surykatka', 'meerkat', '#c49a69'],
   ['k', 'kura', 'hen', '#c89768'],
+  ['a', 'antylopa', 'antelope', '#c89f64'],
+  ['a', 'anakonda', 'anaconda', '#8ca45e'],
+  ['d', 'dziobak', 'platypus', '#a58761'],
+  ['e', 'eland', 'eland', '#bb9368'],
+  ['e', 'edredon', 'eider', '#f2ead5'],
+  ['f', 'fretka', 'ferret', '#aa9374'],
+  ['g', 'goryl', 'gorilla', '#66766d'],
+  ['g', 'gepard', 'cheetah', '#dbb465'],
+  ['h', 'hiena', 'hyena', '#bd9f71'],
+  ['h', 'homar', 'lobster', '#c68f78'],
+  ['i', 'iguana', 'iguana', '#8eae69'],
+  ['i', 'irbis', 'snowLeopard', '#c5ceca'],
+  ['j', 'jaguar', 'jaguar', '#c9a05c'],
+  ['j', 'jeleń', 'stag', '#b08960'],
+  ['t', 'tapir', 'tapir', '#64766c'],
+  ['t', 'tukan', 'toucan', '#405e55'],
+  ['u', 'ukleja', 'bleak', '#b9cecb'],
+  ['u', 'ukwiał', 'anemone', '#b9899d'],
 ].map(([key, name, kind, color]) => ({ key, inputKey: normalizeAnimalKey(key), name, kind, color }));
 
 // Keep spelling on screen, but make every animal reachable without AltGr.
@@ -89,24 +108,43 @@ export function animalForKey(key) {
   return animals.find(animal => animal.inputKey === normalizeAnimalKey(key));
 }
 
-// Per-letter choices remember the last animal shown. Other keys walk the
-// complete album from the animal currently on screen, wrapping at the end.
+// Each letter and the full album have independent shuffled bags. A bag is
+// consumed before refilling, unless switching pools would repeat an animal.
 export class AnimalAlbum {
-  constructor(initial = animalForKey('k')) { this.reset(initial); }
-  reset(initial = animalForKey('k')) {
-    this.current = initial;
-    this.lastByKey = new Map();
+  constructor(initial, { random = Math.random } = {}) {
+    this.random = random;
+    this.reset(initial);
   }
-  next(key) {
+  reset(initial) {
+    const choices = animals.filter(animal => animal !== this.current);
+    this.current = initial ?? choices[Math.floor(this.random() * choices.length)];
+    this.bags = new Map();
+    this.lastByKey = new Map([[this.current.inputKey, this.current]]);
+    return this.current;
+  }
+  shuffle(pool) {
+    const bag = [...pool];
+    for (let i = bag.length - 1; i > 0; i--) {
+      const j = Math.floor(this.random() * (i + 1));
+      [bag[i], bag[j]] = [bag[j], bag[i]];
+    }
+    return bag;
+  }
+  next(key = ' ') {
     const letter = normalizeAnimalKey(key);
     const group = animals.filter(animal => animal.inputKey === letter);
-    let animal;
-    if (group.length) {
-      const previous = group.indexOf(this.lastByKey.get(letter));
-      animal = group[(previous + 1) % group.length];
-    } else {
-      animal = animals[(animals.indexOf(this.current) + 1) % animals.length];
+    const pool = group.length ? group : animals;
+    const bagKey = group.length ? letter : '*';
+    let bag = this.bags.get(bagKey);
+    if (!bag?.length) bag = this.shuffle(pool);
+    const previous = group.length ? this.lastByKey.get(letter) : this.current;
+    if (pool.length > 1 && bag.at(-1) === previous) {
+      const alternative = bag.findIndex(animal => animal !== previous);
+      if (alternative < 0) bag = this.shuffle(pool.filter(animal => animal !== previous));
+      else [bag[alternative], bag[bag.length - 1]] = [bag.at(-1), bag[alternative]];
     }
+    const animal = bag.pop();
+    this.bags.set(bagKey, bag);
     this.current = animal;
     this.lastByKey.set(animal.inputKey, animal);
     return animal;
@@ -254,7 +292,7 @@ function hoofed(kind, c) {
   const alpaca = kind === 'alpaca', deer = kind === 'deer', moose = kind === 'moose';
   const horse = ['horse', 'foal', 'zebra'].includes(kind), cow = kind === 'cow';
   const young = kind === 'foal';
-  const facingUs = kind === 'horse' || young;
+  const facingUs = kind === 'horse' || young || moose;
   const y = alpaca ? 167 : moose ? 143 : 154;
   const ry = deer || young ? 29 : cow || moose ? 42 : 35;
   const hx = 255, hy = alpaca ? 64 : deer ? 89 : cow ? 110 : 92;
@@ -288,13 +326,13 @@ function hoofed(kind, c) {
   const muzzle = cow ? '#c6a18f' : deer ? '#ddc5a5' : moose ? c : cream;
   art += ellipse(hx+(facingUs ? 0 : 13),hy+25,moose ? 28 : horse ? 22 : 18,moose ? 20 : 14,muzzle);
   if (alpaca) art += [232,246,260,272].map((x,j)=>ellipse(x,hy-17-Math.sin(j)*5,10,10,cream,paleOutline)).join('');
-  if (facingUs) {
+  if (facingUs && horse) {
     art += path(`M250 ${hy-20}Q255 ${hy-24} 260 ${hy-20}L262 ${hy+18}Q255 ${hy+23} 248 ${hy+18}Z`,cream);
     art += path(`M232 ${hy-18}Q253 ${hy-41} 275 ${hy-18}L268 ${hy-7}L261 ${hy-14}L253 ${hy-2}L249 ${hy-17}L238 ${hy-7}Z`,dark);
   } else if (horse) art += path(`M235 ${hy-18}Q253 ${hy-41} 272 ${hy-13}L264 ${hy+1}L252 ${hy-10}L244 ${hy+3}Z`,dark);
   if (kind === 'zebra') art += path(`M232 ${hy-9}L251 ${hy+3}L228 ${hy+4}M236 ${hy+10}L257 ${hy+18}L234 ${hy+22}`,dark);
   if (kind === 'goat') art += path('M259 129L263 152L274 132Z',dark);
-  if (moose) art += path('M235 118L234 146L246 141L249 122Z',dark);
+  if (moose) art += path('M244 133L249 155L255 147L262 155L268 133Z',dark);
   if (facingUs) {
     art += eyes(hx-12,hx+12,hy+1);
     art += ellipse(hx-9,hy+24,3,2.5,hoof) + ellipse(hx+9,hy+24,3,2.5,hoof) + smile(hx,hy+33);
@@ -405,7 +443,8 @@ const specialIllustrations = {
 export function illustration(animal, { scenery = true } = {}) {
   const { kind, color } = animal;
   let art;
-  if (Object.hasOwn(extendedIllustrations, kind)) art = extendedIllustrations[kind](color);
+  if (Object.hasOwn(moreIllustrations, kind)) art = moreIllustrations[kind](color);
+  else if (Object.hasOwn(extendedIllustrations, kind)) art = extendedIllustrations[kind](color);
   else if (Object.hasOwn(specialIllustrations, kind)) art = specialIllustrations[kind](color);
   else if (['alpaca','deer','goat','horse','foal','zebra','moose','cow'].includes(kind)) art = hoofed(kind,color);
   else if (['stork','goose','emu','owl','turkey','duck','parrot','penguin'].includes(kind)) art = bird(kind,color);
