@@ -1,5 +1,7 @@
 # Literkowo
 
+<img width="1331" height="696" alt="image" src="https://github.com/user-attachments/assets/89dc271d-cc52-4653-9b9a-b8bc39dc1d1a" />
+
 Interaktywna zabawa rodzica lub opiekuna z dzieckiem: wspólne oglądanie zwierzątek, nazywanie ich i odkrywanie reakcji na dotyk, mysz oraz klawiaturę. Do korzystania wyłącznie razem z dorosłym i pod jego stałym nadzorem.
 
 **[Otwórz aplikację](https://jkobus.github.io/literkowo/)** · [Galeria zwierząt](https://jkobus.github.io/literkowo/debug.html)
