@@ -117,6 +117,7 @@ export function animalForKey(key) {
 
 // Each letter and the full album have independent shuffled bags. A bag is
 // consumed before refilling, unless switching pools would repeat an animal.
+// Session-wide discovery history gives unseen animals priority in either mode.
 export class AnimalAlbum {
   constructor(initial, { random = Math.random } = {}) {
     this.random = random;
@@ -126,6 +127,7 @@ export class AnimalAlbum {
     const choices = animals.filter(animal => animal !== this.current);
     this.current = initial ?? choices[Math.floor(this.random() * choices.length)];
     this.bags = new Map();
+    this.seen = new Set([this.current]);
     this.lastByKey = new Map([[this.current.inputKey, this.current]]);
     return this.current;
   }
@@ -150,7 +152,10 @@ export class AnimalAlbum {
       if (alternative < 0) bag = this.shuffle(pool.filter(animal => animal !== previous));
       else [bag[alternative], bag[bag.length - 1]] = [bag.at(-1), bag[alternative]];
     }
+    const unseenIndex = bag.findLastIndex(animal => !this.seen.has(animal));
+    if (unseenIndex >= 0) [bag[unseenIndex], bag[bag.length - 1]] = [bag.at(-1), bag[unseenIndex]];
     const animal = bag.pop();
+    this.seen.add(animal);
     this.bags.set(bagKey, bag);
     this.current = animal;
     this.lastByKey.set(animal.inputKey, animal);

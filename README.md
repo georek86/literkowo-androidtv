@@ -14,7 +14,7 @@ Wspólna, interaktywna zabawa przy ekranie nadal jest czasem ekranowym. Aplikacj
 
 Album zawiera 100 zwierząt pod 22 klawiszami. Większość liter ma kilka zwierzątek; pod E, I i U jest po jednym. Polskie litery działają też bez AltGr.
 
-- Zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i Spacja losują z całego albumu; litera — spośród pasujących nazw. Tasowane pule zapewniają różnorodność i unikają bezpośrednich powtórzeń, gdy jest kilka zwierząt do wyboru. Poruszaj kursorem lub palcem, aby skierować wzrok zwierzątka.
+- Zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i Spacja losują z całego albumu; litera — spośród pasujących nazw. Pierwszeństwo mają zwierzęta jeszcze niewidziane w bieżącej zabawie, także po zmianie litery lub dotyku. Potem wracają w tasowanej kolejności bez bezpośrednich powtórzeń, gdy jest wybór. Poruszaj kursorem lub palcem, aby skierować wzrok zwierzątka.
 - Głos, scenerię i czas zabawy ustawia dorosły. Przytrzymanie „Dla rodzica” przez 2 sekundy otwiera pauzę; „Zakończ zabawę” wraca na początek.
 - Pełny ekran i blokada klawiatury zależą od przeglądarki i systemu. Nie gwarantują zablokowania wszystkich skrótów, gestów ani przycisków urządzenia.
 
@@ -42,3 +42,5 @@ npm run build
 ```
 
 Gotowa strona znajduje się w `dist/`. Push do `main` uruchamia testy i automatycznie publikuje ją na GitHub Pages.
+
+Licencja: [MIT](LICENSE).

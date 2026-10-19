@@ -80,3 +80,18 @@ footer{flex-wrap:wrap;row-gap:10px}
 .footer-links a{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-block:-12px;font:inherit;color:inherit;text-decoration:none}
 .footer-links svg{width:18px;height:18px;color:#829575;flex-shrink:0}
 .footer-links a:hover,.footer-links a:focus-visible{color:#50694e;text-decoration:underline;text-underline-offset:3px}
+
+/* Give the parent's longer guidance a comfortable reading width and rhythm. */
+#settings{width:min(680px,calc(100% - 32px));max-height:min(88svh,920px);padding:36px 40px;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:24px;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#a3b394 #eeefe5}
+#settings p,#settings .setting-info{font-size:15px;line-height:1.75}
+#settings .setting-row{font-size:15px;gap:20px}
+#settings .setting-row small{font-size:13px;line-height:1.65}
+#settings .setting-info a{font-size:13px;text-underline-offset:3px}
+#settings .privacy-note{font-size:13px!important}
+#settings::-webkit-scrollbar{width:8px}
+#settings::-webkit-scrollbar-track{background:#eeefe5;border-radius:12px;margin-block:24px}
+#settings::-webkit-scrollbar-thumb{background:#a3b394;border:2px solid #eeefe5;border-radius:12px}
+#settings::-webkit-scrollbar-thumb:hover{background:#819673}
+@media(max-width:620px){#settings{padding:28px 24px}#settings .setting-row{gap:12px}#settings h2{font-size:32px}}
+
+@supports selector(::-webkit-scrollbar){#settings{scrollbar-width:auto;scrollbar-color:auto}}

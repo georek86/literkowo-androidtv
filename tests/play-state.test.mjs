@@ -251,3 +251,41 @@ test('a letter with one familiar animal continues to return it without an empty 
     for (let i = 0; i < 5; i++) assert.equal(album.next(key), animalForKey(key));
   }
 });
+
+test('the first animal is already seen: K shows all other K animals before repeating it', () => {
+  const initial = animals.find(a => a.name === 'kot');
+  const group = animals.filter(a => a.inputKey === 'k');
+  const album = makeAlbum(42, initial);
+  const discoveries = group.slice(1).map(() => album.next('k'));
+  assert.ok(discoveries.every(a => a !== initial));
+  assert.equal(new Set(discoveries).size, group.length - 1);
+  assert.equal(album.next('k'), initial);
+});
+
+test('unseen animals take priority across letter and full-album input in the same session', () => {
+  const keys = ['k',' ','p','Enter','s','k','g','n',' ','z','K','1'];
+  for (let seed = 1; seed <= 20; seed++) {
+    const album = makeAlbum(seed);
+    const seen = new Set([album.current]);
+    for (let i = 0; i < 180; i++) {
+      const key = keys[i % keys.length];
+      const group = animals.filter(a => a.inputKey === normalizeAnimalKey(key));
+      const pool = group.length ? group : animals;
+      const hasUnseen = pool.some(a => !seen.has(a));
+      const animal = album.next(key);
+      if (hasUnseen) assert.ok(!seen.has(animal), `seed ${seed}, key ${key}: repeated ${animal.name} while an unseen choice remained`);
+      seen.add(animal);
+    }
+  }
+});
+
+test('a new session starts its discovery history again', () => {
+  const initial = animals.find(a => a.name === 'kot');
+  const group = animals.filter(a => a.inputKey === 'k');
+  const album = makeAlbum(7, initial);
+  for (let i = 0; i < animals.length; i++) album.next(' ');
+  album.reset(initial);
+  const discoveries = group.slice(1).map(() => album.next('k'));
+  assert.ok(discoveries.every(a => a !== initial));
+  assert.equal(new Set(discoveries).size, group.length - 1);
+});
