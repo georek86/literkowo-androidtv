@@ -329,11 +329,11 @@ function hoofed(kind, c) {
   if (facingUs && horse) art += path(`M229 ${hy-17}Q241 ${hy-34} 260 ${hy-23}Q273 ${hy-17} 272 ${hy-3}Q259 ${hy-14} 248 ${hy-5}L250 ${hy-17}Q239 ${hy-7} 229 ${hy-11}Z`,dark);
   else if (horse) art += path(`M234 ${hy-18}Q246 ${hy-34} 263 ${hy-21}L273 ${hy-6}Q254 ${hy-17} 241 ${hy-3}Z`,dark);
   const muzzle = cow ? '#c6a18f' : deer ? '#ddc5a5' : moose ? '#b29a7d' : cream;
+  if (moose) art += path('M238 132Q253 139 268 132L260 162L253 155L246 162Z',dark);
   art += ellipse(hx+(facingUs ? 0 : 14),hy+29,moose ? 29 : horse ? 23 : 19,moose ? 20 : 15,muzzle);
   if (alpaca) art += [232,246,260,272].map((x,i)=>ellipse(x,hy-18-Math.sin(i)*5,10,10,cream,paleOutline)).join('');
   if (kind === 'zebra') art += path(`M230 ${hy-7}Q240 ${hy-3} 249 ${hy+4}L231 ${hy+2}M232 ${hy+10}Q246 ${hy+12} 253 ${hy+20}L234 ${hy+18}`,dark);
   if (kind === 'goat') art += path(`M263 ${hy+42}Q263 ${hy+61} 274 ${hy+49}L275 ${hy+39}Z`,dark);
-  if (moose) art += path('M241 144Q250 159 264 146L260 165L252 158L246 165Z',dark);
   if (facingUs) art += eyes(hx-12,hx+12,hy+5)+ellipse(hx-9,hy+29,3,2.5,hoof)+ellipse(hx+9,hy+29,3,2.5,hoof)+smile(hx,hy+39);
   else art += eye(hx+7,hy+4)+ellipse(hx+29,hy+26,3,2.5,hoof)+line(`M${hx+16} ${hy+39}q7 4 13-1`,dark,1.8);
   return art;
