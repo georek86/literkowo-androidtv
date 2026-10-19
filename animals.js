@@ -167,7 +167,7 @@ function mammal(kind, c) {
     : `${ellipse(143, 64, 21, 24, c)}${ellipse(227, 64, 21, 24, c)}`;
   if (['cat','tiger','fox'].includes(kind)) {
     behind = path('M221 216C294 232 300 177 274 170C249 166 272 208 230 197Z', c);
-    face += ears('pointy') + path('M141 69L139 46L159 67M213 67L233 46L231 74', '#dcae92');
+    face += (kind === 'fox' ? path('M136 101L130 39Q130 30 138 36L177 77L169 102M201 102L193 77L232 36Q240 30 240 39L234 101Z',c) : ears('pointy')) + path('M141 69L139 46L159 67M213 67L233 46L231 74', '#dcae92');
     if (kind === 'fox') {
       behind += path('M272 170C290 169 294 187 286 201L270 199Q281 180 272 170', cream);
       face += path('M133 85Q185 54 237 85L222 126L185 150L148 126Z', c);
@@ -223,7 +223,7 @@ function mammal(kind, c) {
   if (kind === 'beaver') behind = ellipse(258,200,30,53,'#83715a','transform="rotate(38 258 200)"') + line('M242 167l37 29m-48-13 40 32m-42-16 29 30m-4-64-17 56m30-43-15 50','#a18b6b',2);
   if (kind === 'squirrel') behind = path('M226 221Q299 221 291 143Q286 95 257 77Q221 55 210 86Q202 108 229 123Q252 139 242 179L214 192Z', '#9c704e') + line('M238 94Q282 140 260 196','#c5a27c',10);
   if (kind !== 'fox') face += ellipse(185, 99, kind === 'hippo' ? 66 : 55, 49, c, kind === 'sheep' ? paleOutline : '');
-  if (kind === 'monkey') face += ellipse(166,104,27,34,cream) + ellipse(204,104,27,34,cream) + ellipse(185,128,40,23,cream);
+  if (kind === 'monkey') face += path('M146 105C141 78 170 74 185 94C200 74 229 78 224 105Q237 136 211 146Q185 159 159 146Q133 136 146 105Z',cream);
   if (kind === 'panda') face += ellipse(162, 110, 15, 21, '#74796e', 'transform="rotate(25 162 110)"') + ellipse(208, 110, 15, 21, '#74796e', 'transform="rotate(-25 208 110)"');
   if (kind === 'cow') face += path('M150 65Q168 50 186 57L171 89Q145 97 141 81Z', '#8c8976');
   if (['alpaca','sheep'].includes(kind)) {
@@ -232,13 +232,14 @@ function mammal(kind, c) {
   }
   if (kind === 'hippo') face += ellipse(185, 132, 59, 31, '#c0b6c2') + ellipse(159, 122, 5, 4, '#8f8497') + ellipse(211, 122, 5, 4, '#8f8497');
   else if (['moose','foal','zebra','alpaca','cow','deer','goat','horse'].includes(kind)) face += ellipse(185, 128, 32, 23, kind === 'cow' ? '#d2b4a1' : cream) + ellipse(174, 127, 3, 3, '#8a7962') + ellipse(196, 127, 3, 3, '#8a7962');
-  else if (!['fox','elephant'].includes(kind)) face += ellipse(172, 126, 17, 13, cream) + ellipse(198, 126, 17, 13, cream);
+  else if (!['fox','elephant','monkey'].includes(kind)) face += ellipse(172, 126, 17, 13, cream) + ellipse(198, 126, 17, 13, cream);
   if (['cat','tiger'].includes(kind)) {
     extras += line('M148 126L117 120M148 135L116 138M222 126L253 120M222 135L254 138', '#9b8064', 2);
     extras += path('M178 119Q185 114 192 119L185 125Z', '#a86e62') + line('M185 125V131Q178 138 172 132M185 131Q192 138 198 132', '#8a6b55', 2);
   } else if (kind === 'elephant') {
-    extras += path('M171 122L171 175Q168 206 198 208Q224 208 222 187Q221 180 213 182Q207 185 205 190Q194 192 199 173L199 122Z', c);
-    extras += line('M177 153h15M177 164h14', '#8e9c9d', 2);
+    extras += path('M163 134Q146 150 157 170Q156 151 174 144M207 134Q225 151 215 169Q213 152 199 144Z',cream);
+    extras += path('M172 123Q185 115 198 123Q193 150 199 176Q199 193 210 187Q218 175 224 183Q234 203 210 214Q176 227 172 194Q177 163 172 123Z',c);
+    extras += line('M178 149q7 3 15 0m-14 12q7 3 14 0M208 196q6 1 9-4','#6f9290',2);
   } else if (!['hippo','alpaca','moose','foal','zebra','cow','deer','goat','horse'].includes(kind)) extras += ellipse(185, 123, 8, 5, '#615647') + smile();
   else extras += smile(185, 140);
   if (kind === 'tiger') extras += path('M174 55L178 81L185 62L194 82L198 56M134 95L153 100L132 109M235 95L216 100L239 109M139 173L154 182L136 188M227 176L215 188L234 189', '#877155');
@@ -294,59 +295,47 @@ function insect(kind, c) {
   return ellipse(140,118,46,54,wings,'transform="rotate(-25 140 118)"')+ellipse(230,118,46,54,wings,'transform="rotate(25 230 118)"')+ellipse(151,179,35,36,c)+ellipse(219,179,35,36,c)+ellipse(135,115,21,27,'#e6d7b8')+ellipse(235,115,21,27,'#e6d7b8')+ellipse(151,182,13,14,'#ddd0ad')+ellipse(219,182,13,14,'#ddd0ad')+ellipse(185,147,13,57,'#8d8f6b')+ellipse(185,95,18,17,'#9c9d78')+line('M178 83Q163 59 157 71M192 83Q207 59 213 71','#8d8f6b',3)+eyes(179,191,94)+smile(185,101);
 }
 
-// Side views give hoofed animals real necks, four legs and distinct profiles.
+// Rounded joints and separated near/far legs keep the silhouettes readable.
 function hoofed(kind, c) {
   const alpaca = kind === 'alpaca', deer = kind === 'deer', moose = kind === 'moose';
-  const horse = ['horse', 'foal', 'zebra'].includes(kind), cow = kind === 'cow';
-  const young = kind === 'foal';
-  const facingUs = kind === 'horse' || young || moose;
-  const y = alpaca ? 167 : moose ? 143 : 154;
-  const ry = deer || young ? 29 : cow || moose ? 42 : 35;
-  const hx = 255, hy = alpaca ? 64 : deer ? 89 : cow ? 110 : 92;
-  const dark = kind === 'zebra' ? '#60675f' : '#76624c';
-  const hoof = '#675e50';
-  const legWidth = deer || young ? 8 : 12;
-  const leg = (x, fill, offset = 0) => path(`M${x} ${y+12}L${x+offset} 229H${x+offset+legWidth}L${x+legWidth+4} ${y+12}Z`,fill)
-    + path(`M${x+offset} 223h${legWidth}v10h-${legWidth}Z`,hoof);
-  let art = leg(139,'#9b8c75',-7) + leg(204,'#9b8c75',9);
-  if (horse) art += path('M109 142Q72 131 75 184L68 216L88 212Q101 178 97 161L114 160Z',dark);
-  else if (moose || deer) art += ellipse(105,y-10,10,14,c,'transform="rotate(-30 105 145)"');
-  else art += line(`M110 ${y-9}Q83 ${y-18} 82 ${y+18}`,c,9);
-  art += path(`M200 ${y+12}Q225 ${y-25} 228 ${hy+6}L254 ${hy+5}Q246 ${y-16} 239 ${y+9}Z`,c);
-  if (horse) art += path(`M228 ${hy+3}Q227 117 210 145L224 151L241 116L241 ${hy+3}Z`,dark);
-  art += ellipse(169,y,70,ry,c, cow ? paleOutline : '');
-  if (alpaca) art += path('M105 153Q91 141 108 132Q115 114 131 127Q144 110 159 125Q176 112 189 128Q208 117 219 136Q240 136 237 155Q249 175 230 184Q225 205 206 198Q193 214 176 202Q158 215 144 200Q125 209 117 190Q98 188 105 174Q91 163 105 153Z',c,paleOutline);
-  if (deer) art += ellipse(110,y+5,13,22,cream) + path('M127 171Q174 189 213 168Q189 193 146 181Z',cream);
-  if (cow) art += path('M118 132Q145 113 156 133L148 160Q120 171 113 152ZM191 138Q216 125 229 148L220 174Q191 183 185 163Z','#7d7b69') + ellipse(177,192,22,12,'#cfac9b');
-  if (moose) art += ellipse(132,126,34,29,c);
-  art += leg(116,c) + leg(218,c,-6);
-  if (kind === 'zebra') art += path('M120 129L134 167L116 153M147 121L159 169L143 151M178 122L185 173L170 154M207 130L211 171L197 152M119 197H132V205H119M213 197H228V205H213',dark);
-  if (kind === 'goat') art += path('M240 73Q216 34 234 25Q229 44 251 72M259 73Q270 42 258 29Q285 41 270 81',dark);
-  if (cow) art += path('M235 91Q213 80 219 63L245 91M266 90L284 64Q293 87 273 98Z','#a29170');
-  if (moose) art += path('M240 72L211 51Q184 66 167 44L160 26L175 35L179 16L190 35L201 19L207 40L225 42L236 61M267 68L288 44L293 24L301 38L312 17L316 36L332 25L326 47Q309 65 288 57L274 80', '#8d795a');
-  const earLength = alpaca ? 27 : deer ? 23 : cow ? 17 : 20;
-  const earAngle = cow || kind === 'goat' ? 65 : 27;
-  art += ellipse(hx-18,hy-28,9,earLength,c,'transform="rotate(-'+earAngle+' '+(hx-18)+' '+(hy-28)+')"')
-    + ellipse(hx+11,hy-29,9,earLength,c,'transform="rotate('+earAngle+' '+(hx+11)+' '+(hy-29)+')"');
-  if (deer) art += ellipse(hx-18,hy-28,4,19,'#dfc1a0','transform="rotate(-27 237 61)"') + ellipse(hx+11,hy-29,4,19,'#dfc1a0','transform="rotate(27 266 60)"');
-  art += ellipse(hx,hy+5,young ? 25 : 28,horse || moose ? 35 : 29,c,facingUs ? '' : 'transform="rotate(-15 '+hx+' '+(hy+5)+')"');
-  const muzzle = cow ? '#c6a18f' : deer ? '#ddc5a5' : moose ? c : cream;
-  art += ellipse(hx+(facingUs ? 0 : 13),hy+25,moose ? 28 : horse ? 22 : 18,moose ? 20 : 14,muzzle);
-  if (alpaca) art += [232,246,260,272].map((x,j)=>ellipse(x,hy-17-Math.sin(j)*5,10,10,cream,paleOutline)).join('');
-  if (facingUs && horse) {
-    art += path(`M250 ${hy-20}Q255 ${hy-24} 260 ${hy-20}L262 ${hy+18}Q255 ${hy+23} 248 ${hy+18}Z`,cream);
-    art += path(`M232 ${hy-18}Q253 ${hy-41} 275 ${hy-18}L268 ${hy-7}L261 ${hy-14}L253 ${hy-2}L249 ${hy-17}L238 ${hy-7}Z`,dark);
-  } else if (horse) art += path(`M235 ${hy-18}Q253 ${hy-41} 272 ${hy-13}L264 ${hy+1}L252 ${hy-10}L244 ${hy+3}Z`,dark);
-  if (kind === 'zebra') art += path(`M232 ${hy-9}L251 ${hy+3}L228 ${hy+4}M236 ${hy+10}L257 ${hy+18}L234 ${hy+22}`,dark);
-  if (kind === 'goat') art += path('M259 129L263 152L274 132Z',dark);
-  if (moose) art += path('M244 133L249 155L255 147L262 155L268 133Z',dark);
-  if (facingUs) {
-    art += eyes(hx-12,hx+12,hy+1);
-    art += ellipse(hx-9,hy+24,3,2.5,hoof) + ellipse(hx+9,hy+24,3,2.5,hoof) + smile(hx,hy+33);
-  } else {
-    art += eye(hx+7,hy+1);
-    art += ellipse(hx+27,hy+22,3.5,2.5,hoof) + line(`M${hx+15} ${hy+33}q7 4 13-1`,dark,1.8);
-  }
+  const horse = ['horse','foal','zebra'].includes(kind), cow = kind === 'cow', young = kind === 'foal';
+  const facingUs = ['horse','foal','moose'].includes(kind);
+  const y = alpaca ? 163 : moose ? 146 : 154, hy = alpaca ? 70 : cow ? 109 : 96;
+  const hx = 253, ry = deer || young ? 30 : moose || cow ? 42 : 36;
+  const dark = kind === 'zebra' ? '#60675f' : '#76624c', hoof = '#675e50';
+  const width = deer || young ? 5 : 7;
+  const leg = (x, foot, fill, top = y+13) => path(`M${x-width} ${top}Q${x-width-1} ${top+22} ${foot-width} 225Q${foot} 232 ${foot+width} 225L${x+width+1} ${top}Z`,fill)
+    + path(`M${foot-width} 222Q${foot} 220 ${foot+width} 222V230H${foot-width}Z`,hoof);
+  let art = leg(141,142,'#998d77') + leg(199,202,'#998d77');
+  if (horse) art += path('M110 143Q85 129 83 158Q83 188 75 207Q96 205 100 185L102 156L117 157Z',dark);
+  else if (deer || moose) art += ellipse(106,y-7,10,13,deer ? cream : c,'transform="rotate(-28 106 147)"');
+  else art += line(`M111 ${y-9}Q88 ${y-20} 85 ${y+15}`,c,7);
+  art += path(`M193 ${y+16}C213 ${y-1} 220 ${hy+23} 229 ${hy+7}Q241 ${hy-5} 255 ${hy+6}C248 ${hy+27} 248 ${y+6} 228 ${y+22}Z`,c);
+  if (horse) art += path(`M229 ${hy+3}Q223 ${hy+33} 208 ${y-2}Q217 ${y-2} 224 ${y+4}Q240 ${hy+38} 243 ${hy+7}Z`,dark);
+  art += ellipse(169,y,70,ry,c);
+  if (alpaca) art += path('M105 150Q92 138 109 131Q116 115 131 127Q146 112 160 126Q177 115 191 128Q210 121 220 137Q239 137 237 154Q248 173 230 183Q225 202 207 196Q193 212 177 201Q160 212 145 198Q126 207 117 188Q98 186 105 172Q92 160 105 150Z',c,paleOutline);
+  if (deer) art += ellipse(109,y+2,11,19,cream)+path('M128 169Q170 184 211 168Q185 191 141 180Z',cream);
+  if (cow) art += path('M116 139Q135 119 153 134Q163 145 147 158Q119 169 113 151ZM188 139Q211 127 227 145Q235 163 216 174Q193 181 185 163Z','#7d7b69')
+    + ellipse(178,191,20,10,'#cfac9b')+line('M169 198v6m12-5v6m9-8v5','#b48d7e',3);
+  art += leg(120,116,c)+leg(225,228,c);
+  if (kind === 'zebra') art += path('M121 128Q127 146 129 169Q118 158 115 143ZM149 120Q155 142 157 170Q144 154 143 133ZM177 120Q184 140 183 173Q171 153 171 131ZM205 129Q211 144 214 170Q201 157 199 141Z',dark);
+  if (kind === 'goat') art += path('M237 76Q220 47 232 28Q231 51 246 74M260 76Q275 52 266 31Q283 49 271 83Z',dark);
+  if (cow) art += path('M233 91Q213 83 219 67Q228 84 241 87M266 90Q282 80 283 67Q293 83 273 98Z','#a29170');
+  if (moose) art += path('M237 72L217 53Q193 62 176 45L167 28L181 36L184 20L195 38L206 24L211 44L228 48L242 65M266 72L285 51L290 29L298 40L309 22L313 40L327 30L321 49Q307 63 287 60L272 80Z','#8d795a');
+  const ear = (x, angle, length) => ellipse(x,hy-28,9,length,c,`transform="rotate(${angle} ${x} ${hy-28})"`);
+  art += ear(hx-20,cow || kind === 'goat' ? -61 : -27,alpaca ? 27 : 20)+ear(hx+15,cow || kind === 'goat' ? 61 : 27,alpaca ? 27 : 20);
+  if (deer) art += ellipse(hx-20,hy-29,4,14,'#dfc1a0',`transform="rotate(-27 ${hx-20} ${hy-29})"`)+ellipse(hx+15,hy-29,4,14,'#dfc1a0',`transform="rotate(27 ${hx+15} ${hy-29})"`);
+  art += ellipse(hx,hy+6,young ? 26 : 29,horse || moose ? 38 : 30,c);
+  if (facingUs && horse) art += path(`M229 ${hy-17}Q241 ${hy-34} 260 ${hy-23}Q273 ${hy-17} 272 ${hy-3}Q259 ${hy-14} 248 ${hy-5}L250 ${hy-17}Q239 ${hy-7} 229 ${hy-11}Z`,dark);
+  else if (horse) art += path(`M234 ${hy-18}Q246 ${hy-34} 263 ${hy-21}L273 ${hy-6}Q254 ${hy-17} 241 ${hy-3}Z`,dark);
+  const muzzle = cow ? '#c6a18f' : deer ? '#ddc5a5' : moose ? '#b29a7d' : cream;
+  art += ellipse(hx+(facingUs ? 0 : 14),hy+29,moose ? 29 : horse ? 23 : 19,moose ? 20 : 15,muzzle);
+  if (alpaca) art += [232,246,260,272].map((x,i)=>ellipse(x,hy-18-Math.sin(i)*5,10,10,cream,paleOutline)).join('');
+  if (kind === 'zebra') art += path(`M230 ${hy-7}Q240 ${hy-3} 249 ${hy+4}L231 ${hy+2}M232 ${hy+10}Q246 ${hy+12} 253 ${hy+20}L234 ${hy+18}`,dark);
+  if (kind === 'goat') art += path(`M263 ${hy+42}Q263 ${hy+61} 274 ${hy+49}L275 ${hy+39}Z`,dark);
+  if (moose) art += path('M241 144Q250 159 264 146L260 165L252 158L246 165Z',dark);
+  if (facingUs) art += eyes(hx-12,hx+12,hy+5)+ellipse(hx-9,hy+29,3,2.5,hoof)+ellipse(hx+9,hy+29,3,2.5,hoof)+smile(hx,hy+39);
+  else art += eye(hx+7,hy+4)+ellipse(hx+29,hy+26,3,2.5,hoof)+line(`M${hx+16} ${hy+39}q7 4 13-1`,dark,1.8);
   return art;
 }
 
@@ -410,13 +399,6 @@ const specialIllustrations = {
     + path('M200 158C262 138 202 110 223 78C237 58 252 77 249 92', 'none', `stroke="${c}" stroke-width="17" stroke-linecap="round"`)
     + ellipse(244,78,24,23,c) + path('M261 80Q286 90 270 111L254 99Z','#d7c2a9') + path('M267 95L279 99L270 111L259 102Z','#605f55')
     + ellipse(158,155,34,21,'#b78179') + eye(250,75),
-  giraffe: c => line('M236 165Q268 171 265 202', '#967c54', 5) + ellipse(265,205,6,10,'#967c54')
-    + path('M144 170L148 234H160L168 177M207 172L213 234H225L228 169',c)
-    + ellipse(188,170,61,34,c) + path('M151 163L157 73L187 71L196 159Z',c)
-    + line('M160 62L153 31M187 61L194 31','#a88b5d',6) + ellipse(153,30,6,6,'#8e7654') + ellipse(194,30,6,6,'#8e7654')
-    + ellipse(140,65,18,9,c,'transform="rotate(25 140 65)"') + ellipse(207,65,18,9,c,'transform="rotate(-25 207 65)"')
-    + ellipse(174,80,32,31,c) + ellipse(174,101,27,17,cream) + eyes(162,186,78) + smile(174,107)
-    + [[169,124,8,9],[177,147,9,7],[152,168,10,9],[191,170,11,9],[220,163,9,8],[211,188,8,6]].map(([x,y,rx,ry])=>ellipse(x,y,rx,ry,'#a28253')).join(''),
   octopus: c => ['M144 171Q101 224 84 198Q74 183 89 180','M160 186Q133 247 111 222','M177 193Q164 253 145 233','M192 193Q204 253 221 233','M209 186Q237 247 258 222','M225 171Q269 224 286 198Q296 183 281 180','M155 175Q117 203 111 178','M215 175Q253 203 259 178'].map(d=>path(d,'none',`stroke="${c}" stroke-width="16" stroke-linecap="round"`)).join('')
     + ellipse(185,130,58,67,c) + ellipse(185,161,36,26,'#c8bfd0') + eyes(166,204,139) + smile(185,161),
   turtle: c => ellipse(131,219,23,12,c) + ellipse(218,219,23,12,c) + path('M115 200L91 213L126 212',c)
