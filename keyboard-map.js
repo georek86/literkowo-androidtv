@@ -35,7 +35,7 @@ export class KeyboardMapHelper {
   setEnabled(enabled) {
     this.enabled = Boolean(enabled);
     if (this.container) {
-      this.container.hidden = !this.enabled;
+      this.container.hidden = !this.enabled || this.collapsed;
     }
   }
 
@@ -43,6 +43,7 @@ export class KeyboardMapHelper {
     this.collapsed = Boolean(collapsed);
     if (this.container) {
       this.container.classList.toggle('collapsed', this.collapsed);
+      this.container.hidden = this.collapsed || !this.enabled;
       this.container.setAttribute('aria-expanded', String(!this.collapsed));
     }
     this.onCollapseChange?.(this.collapsed);
@@ -65,7 +66,10 @@ export class KeyboardMapHelper {
     this.container.setAttribute('role', 'region');
     this.container.setAttribute('aria-label', 'Klawiatura ekranowa dla dzieci');
     this.container.setAttribute('aria-expanded', String(!this.collapsed));
-    if (this.collapsed) this.container.classList.add('collapsed');
+    if (this.collapsed) {
+      this.container.classList.add('collapsed');
+      this.container.hidden = true;
+    }
 
     // Letter rows
     for (const row of KEYBOARD_ROWS) {
@@ -108,11 +112,13 @@ export class KeyboardMapHelper {
     repeatBtn.dataset.key = 'r';
     repeatBtn.innerHTML = '<span class="kb-icon">🔊</span><span class="kb-label">Powtórz</span>';
     repeatBtn.setAttribute('aria-label', 'Powtórz dźwięk lub nazwę zwierzaka');
-    repeatBtn.addEventListener('pointerdown', (e) => {
+    const handleRepeat = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey('r');
-    });
+    };
+    repeatBtn.addEventListener('pointerdown', handleRepeat);
+    repeatBtn.addEventListener('click', handleRepeat);
     this.keyElements.set('r-action', repeatBtn);
 
     // 2. Space / Feed button (widest center key)
@@ -122,11 +128,13 @@ export class KeyboardMapHelper {
     spaceBtn.dataset.key = ' ';
     spaceBtn.innerHTML = '<span class="kb-icon">🥕</span><span class="kb-label">Nakarm / Spacja</span>';
     spaceBtn.setAttribute('aria-label', 'Spacja - nakarm zwierzaka lub losuj kolejne');
-    spaceBtn.addEventListener('pointerdown', (e) => {
+    const handleSpace = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey(' ');
-    });
+    };
+    spaceBtn.addEventListener('pointerdown', handleSpace);
+    spaceBtn.addEventListener('click', handleSpace);
     this.keyElements.set(' ', spaceBtn);
 
     // 3. Backspace button (for spelling mode)
@@ -136,11 +144,13 @@ export class KeyboardMapHelper {
     backspaceBtn.dataset.key = 'Backspace';
     backspaceBtn.innerHTML = '<span class="kb-icon">⌫</span><span class="kb-label">Usuń</span>';
     backspaceBtn.setAttribute('aria-label', 'Cofnij literę');
-    backspaceBtn.addEventListener('pointerdown', (e) => {
+    const handleBackspace = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey('Backspace');
-    });
+    };
+    backspaceBtn.addEventListener('pointerdown', handleBackspace);
+    backspaceBtn.addEventListener('click', handleBackspace);
     this.keyElements.set('backspace', backspaceBtn);
 
     // 4. System keyboard toggle button (IME)
@@ -150,11 +160,13 @@ export class KeyboardMapHelper {
     imeBtn.dataset.key = 'SystemIME';
     imeBtn.innerHTML = '<span class="kb-icon">⌨️</span><span class="kb-label">Systemowa</span>';
     imeBtn.setAttribute('aria-label', 'Otwórz systemową klawiaturę Androida');
-    imeBtn.addEventListener('pointerdown', (e) => {
+    const handleIme = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey('SystemIME');
-    });
+    };
+    imeBtn.addEventListener('pointerdown', handleIme);
+    imeBtn.addEventListener('click', handleIme);
 
     // 5. Hide / Collapse button
     const collapseBtn = document.createElement('button');
@@ -163,11 +175,13 @@ export class KeyboardMapHelper {
     collapseBtn.dataset.key = 'ToggleCollapse';
     collapseBtn.innerHTML = '<span class="kb-icon">✕</span>';
     collapseBtn.setAttribute('aria-label', 'Schowaj klawiaturę');
-    collapseBtn.addEventListener('pointerdown', (e) => {
+    const handleCollapse = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.toggleCollapsed();
-    });
+    };
+    collapseBtn.addEventListener('pointerdown', handleCollapse);
+    collapseBtn.addEventListener('click', handleCollapse);
 
     actionRow.appendChild(repeatBtn);
     actionRow.appendChild(spaceBtn);

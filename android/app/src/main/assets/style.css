@@ -629,24 +629,29 @@ body.night-mode .card-title {
 /* Keyboard Map & Software Keyboard for Android Mobile and TV */
 .keyboard-map-container {
   margin-top: 10px;
-  width: 96%;
-  max-width: 520px;
+  width: calc(100% - 48px);
+  max-width: 480px;
+  padding: 0 4px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 3px;
   z-index: 10;
   user-select: none;
   touch-action: manipulation;
-  transition: max-height 0.28s ease, opacity 0.25s ease, transform 0.25s ease;
+  transition: max-height 0.25s ease, opacity 0.2s ease, transform 0.2s ease;
 }
+.keyboard-map-container[hidden],
 .keyboard-map-container.collapsed {
-  max-height: 0;
-  opacity: 0;
-  pointer-events: none;
-  overflow: hidden;
-  transform: translateY(12px);
-  margin-top: 0;
-  margin-bottom: 0;
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
 }
 .kb-row {
   display: flex;
@@ -813,6 +818,28 @@ body.night-mode .btn-toggle-keyboard {
 @keyframes kb-pulse {
   from { transform: scale(1.14); }
   to { transform: scale(1.24); }
+}
+
+@media (max-width: 620px) {
+  .keyboard-map-container {
+    width: calc(100% - 24px);
+    max-width: 440px;
+    padding: 0 2px;
+    gap: 2.5px;
+  }
+  .kb-row {
+    gap: 2px;
+  }
+  .kb-key {
+    height: 30px;
+    font-size: clamp(9px, 2.7vw, 12px);
+    border-radius: 6px;
+  }
+  .kb-key-action {
+    height: 32px;
+    font-size: 10px;
+    padding: 0 4px;
+  }
 }
 
 /* Memory Game Board & Cards */

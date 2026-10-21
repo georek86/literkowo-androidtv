@@ -1016,7 +1016,11 @@ async function begin(resuming = false) {
   parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
   document.body.classList.add('playing');
   phase = 'playing';
-  if (btnToggleKeyboard) btnToggleKeyboard.hidden = !keyboardHelper.enabled;
+  if (btnToggleKeyboard) {
+    btnToggleKeyboard.hidden = !keyboardHelper.enabled;
+    const txt = btnToggleKeyboard.querySelector('#toggle-kb-text');
+    if (txt) txt.textContent = keyboardHelper.collapsed ? 'Klawiatura' : 'Schowaj';
+  }
   state.start();
   startClock();
   startButton.disabled = false;
@@ -1180,11 +1184,19 @@ settingKeyboardHint?.addEventListener('change', () => {
   }
 });
 
-btnToggleKeyboard?.addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
+let lastToggleTime = 0;
+function handleKeyboardToggle(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const now = performance.now();
+  if (now - lastToggleTime < 250) return;
+  lastToggleTime = now;
   keyboardHelper.toggleCollapsed();
-});
+}
+btnToggleKeyboard?.addEventListener('pointerdown', handleKeyboardToggle);
+btnToggleKeyboard?.addEventListener('click', handleKeyboardToggle);
 
 if (systemImeInput) {
   systemImeInput.addEventListener('input', () => {
