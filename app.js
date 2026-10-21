@@ -1097,7 +1097,9 @@ async function begin(resuming = false) {
   if (protectionErrorEl) protectionErrorEl.hidden = true;
   if (!resuming) {
     remaining = Number(durationSelect.value) * 60_000;
-    wantsFullscreen = fullscreenCheckbox.checked;
+    // Phones/tablets and the Android app are already full-screen; requesting browser fullscreen or
+    // keyboard lock inside a WebView can hang or be refused, leaving the game stuck in 'starting'.
+    wantsFullscreen = fullscreenCheckbox.checked && !isTouchDevice && !window.AndroidBridge;
   }
   const protection = await protectKeyboard();
   if (phase !== 'starting') return;
