@@ -122,3 +122,18 @@ select:focus, select:focus-visible {
   margin-top: 26px;
   letter-spacing: 0.3px;
 }
+
+
+/* Performance & TV GPU optimizations */
+.eye .pupil {
+  will-change: transform;
+}
+.animal-stage {
+  contain: layout style;
+}
+.readiness {
+  contain: layout style paint;
+}
+.illustration {
+  contain: layout paint;
+}

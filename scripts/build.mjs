@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 // Publish only the browser application, never development files or server code.
 const assets = ['index.html', 'style.css', 'app.js', 'animals.js', 'gaze.js', 'animal-art.js', 'animals-extended.js', 'animals-more.js', 'habitats.js', 'play-state.js', 'keyboard-protection.js', 'manifest.webmanifest', 'icon.svg', 'debug.html', 'debug.css', 'debug.js', 'debug-mode.js', 'debug-mode.css', 'LICENSE'];
@@ -8,4 +8,11 @@ const contents = await Promise.all(assets.map(name => readFile(new URL(name, roo
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await Promise.all(assets.map((name, index) => writeFile(new URL(name, output), contents[index])));
-console.log(`Gotowe: dist/ (${assets.length} plików). Statyczna gra do hostowania przez HTTPS.`);
+
+// Automatically sync web assets to Android TV app assets
+const androidAssets = new URL('android/app/src/main/assets/', root);
+const appAssets = ['index.html', 'style.css', 'app.js', 'animals.js', 'gaze.js', 'animal-art.js', 'animals-extended.js', 'animals-more.js', 'habitats.js', 'play-state.js', 'keyboard-protection.js', 'manifest.webmanifest', 'icon.svg'];
+await mkdir(androidAssets, { recursive: true });
+await Promise.all(appAssets.map(name => cp(new URL(name, root), new URL(name, androidAssets), { force: true })));
+
+console.log(`Gotowe: dist/ (${assets.length} plików) oraz zsynchronizowano android/app/src/main/assets/.`);

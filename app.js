@@ -5,6 +5,42 @@ import { isAnimalInput, PlayState } from './play-state.js';
 import { acquireKeyboardProtection } from './keyboard-protection.js';
 
 const $ = id => document.getElementById(id);
+
+// Pre-cached DOM element references for 60fps performance and zero GC churn
+const readinessEl = $('readiness');
+const readinessFillEl = $('readiness-fill');
+const readinessLabelEl = $('readiness-label');
+const illustrationEl = $('illustration');
+const stageCaptionEl = $('stage-caption');
+const stageEl = $('stage');
+const stageHintEl = $('stage-hint');
+const stageHintKbd = stageHintEl?.querySelector('kbd');
+const stageHintSpan = stageHintEl?.querySelector('span');
+const animalContentEl = $('animal-content');
+const letterEl = $('letter');
+const animalNameEl = $('animal-name');
+const noticeEl = $('notice');
+const soundCheckbox = $('sound');
+const sceneryCheckbox = $('scenery');
+const fullscreenCheckbox = $('fullscreen');
+const settingSceneryCheckbox = $('setting-scenery');
+const durationSelect = $('duration');
+const parentButton = $('parent-button');
+const startButton = $('start');
+const resumeButton = $('resume');
+const stopButton = $('stop');
+const welcomeSection = $('welcome');
+const finishSection = $('finish');
+const playInstructionsSection = $('play-instructions');
+const pausedDialog = $('paused');
+const settingsDialog = $('settings');
+const protectionErrorEl = $('protection-error');
+const pauseDetailEl = $('pause-detail');
+const lockStatusEl = $('lock-status');
+const sessionClockEl = $('session-clock');
+const voiceNoteEl = $('voice-note');
+const touchNoteEl = $('touch-note');
+
 const state = new PlayState();
 const synth = window.speechSynthesis;
 let phase = 'welcome';
@@ -15,14 +51,14 @@ const hasKeyboardLock = Boolean(navigator.keyboard?.lock);
 
 // Touch-first devices start in a window without requiring keyboard protection.
 if (window.matchMedia('(pointer: coarse)').matches) {
-  $('fullscreen').checked = false;
-  $('touch-note').hidden = false;
+  if (fullscreenCheckbox) fullscreenCheckbox.checked = false;
+  if (touchNoteEl) touchNoteEl.hidden = false;
 }
 
 // On platforms where Keyboard Lock API is unavailable (Android TV, mobile, Safari, Firefox),
 // adapt the switch label from "Pełny ekran i blokada" to "Pełny ekran".
 if (!hasKeyboardLock) {
-  const fullscreenLabel = $('fullscreen')?.closest('label');
+  const fullscreenLabel = fullscreenCheckbox?.closest('label');
   if (fullscreenLabel) {
     for (const node of fullscreenLabel.childNodes) {
       if (node.nodeType === Node.TEXT_NODE && node.textContent.includes('Pełny ekran')) {
@@ -32,7 +68,16 @@ if (!hasKeyboardLock) {
   }
 }
 
+const READINESS_LABELS = Object.freeze({
+  ready: 'Można dalej',
+  waiting: 'Chwila przerwy',
+  speaking: 'Słuchamy',
+  inactive: 'Przerwa'
+});
+
 let readinessFrame;
+let lastReadinessProgress = -1;
+let lastReadinessPhase = '';
 let polishVoice = null;
 let speechVersion = 0;
 let speechTimeout;
@@ -52,23 +97,39 @@ let noticeTimer;
 let greetingTimer;
 let debugPanel;
 let pauseOpenedAt = 0;
+let lastRenderedAnimal = null;
+let lastRenderedScenery = null;
 
 function updateReadiness() {
   cancelAnimationFrame(readinessFrame);
-  const indicator = $('readiness');
-  indicator.hidden = phase !== 'playing';
-  if (indicator.hidden) return;
+  if (!readinessEl) return;
+  readinessEl.hidden = phase !== 'playing';
+  if (readinessEl.hidden) return;
+
   const status = state.readiness();
-  const labels = { ready: 'Można dalej', waiting: 'Chwila przerwy', speaking: 'Słuchamy', inactive: 'Przerwa' };
-  const label = labels[status.phase];
-  indicator.dataset.state = status.phase;
-  indicator.setAttribute('aria-valuetext', label);
-  if (status.phase === 'speaking') indicator.removeAttribute('aria-valuenow');
-  else indicator.setAttribute('aria-valuenow', Math.round(status.progress * 100));
-  if ($('readiness-label').textContent !== label) $('readiness-label').textContent = label;
+  const label = READINESS_LABELS[status.phase] || '';
+
+  if (lastReadinessPhase !== status.phase) {
+    lastReadinessPhase = status.phase;
+    readinessEl.dataset.state = status.phase;
+    readinessEl.setAttribute('aria-valuetext', label);
+    if (readinessLabelEl.textContent !== label) readinessLabelEl.textContent = label;
+  }
+
   const progress = reducedMotion.matches && status.phase !== 'ready' ? 0 : status.progress;
-  $('readiness-fill').setAttribute('stroke-dashoffset', 100 * (1 - progress));
-  // No animation loop while the narrator speaks or after the circle is full.
+  const roundedProgress = Math.round(progress * 100);
+
+  if (status.phase === 'speaking') {
+    readinessEl.removeAttribute('aria-valuenow');
+  } else if (lastReadinessProgress !== roundedProgress) {
+    readinessEl.setAttribute('aria-valuenow', roundedProgress);
+  }
+
+  if (lastReadinessProgress !== progress) {
+    lastReadinessProgress = progress;
+    readinessFillEl.setAttribute('stroke-dashoffset', 100 * (1 - progress));
+  }
+
   if (status.phase === 'waiting') readinessFrame = requestAnimationFrame(updateReadiness);
 }
 reducedMotion.addEventListener('change', updateReadiness);
@@ -77,18 +138,21 @@ function updateVoices() {
   const voices = synth?.getVoices() || [];
   const polish = voices.filter(voice => /^pl(?:[-_]|$)/i.test(voice.lang));
   polishVoice = polish.find(voice => voice.localService) || polish[0] || null;
-  $('voice-note').textContent = polishVoice
-    ? (polishVoice.localService ? 'Polski głos jest dostępny na tym urządzeniu.' : 'Polski głos może wymagać połączenia z internetem.')
-    : 'Brak polskiego głosu na tym urządzeniu. Możecie sami nazywać zwierzątka lub doinstalować polski głos w systemie.';
+  if (voiceNoteEl) {
+    voiceNoteEl.textContent = polishVoice
+      ? (polishVoice.localService ? 'Polski głos jest dostępny na tym urządzeniu.' : 'Polski głos może wymagać połączenia z internetem.')
+      : 'Brak polskiego głosu na tym urządzeniu. Możecie sami nazywać zwierzątka lub doinstalować polski głos w systemie.';
+  }
 }
 synth?.addEventListener('voiceschanged', updateVoices);
 updateVoices();
 
 function notice(message) {
   clearTimeout(noticeTimer);
-  $('notice').textContent = message;
-  $('notice').hidden = false;
-  noticeTimer = setTimeout(() => { $('notice').hidden = true; }, 6500);
+  if (!noticeEl) return;
+  noticeEl.textContent = message;
+  noticeEl.hidden = false;
+  noticeTimer = setTimeout(() => { noticeEl.hidden = true; }, 6500);
 }
 
 function cancelSpeech() {
@@ -100,8 +164,7 @@ function cancelSpeech() {
 }
 
 function speak(animal) {
-  if (!$('sound').checked || !polishVoice || !synth) return;
-  // Keep a reference and wait for end/error. Never accumulate utterances.
+  if (!soundCheckbox.checked || !polishVoice || !synth) return;
   const version = ++speechVersion;
   state.speaking = true;
   updateReadiness();
@@ -135,44 +198,50 @@ function speak(animal) {
 }
 
 function renderAppearance() {
-  const scenery = $('scenery').checked;
+  const scenery = sceneryCheckbox.checked;
+  if (currentAnimal === lastRenderedAnimal && scenery === lastRenderedScenery) return;
+  lastRenderedAnimal = currentAnimal;
+  lastRenderedScenery = scenery;
+
   const habitat = habitatFor(currentAnimal);
-  $('illustration').innerHTML = illustration(currentAnimal, { scenery });
-  $('illustration').setAttribute('aria-label', `Ilustracja: ${currentAnimal.name}${scenery ? ` — ${habitat.label.toLocaleLowerCase('pl')}` : ''}`);
-  $('stage-caption').textContent = scenery ? habitat.label.toLocaleUpperCase('pl') : (phase === 'welcome' ? 'POZNAJMY SIĘ' : 'MAŁE SPOTKANIA');
-  $('stage').classList.toggle('with-scenery', scenery);
+  illustrationEl.innerHTML = illustration(currentAnimal, { scenery });
+  illustrationEl.setAttribute('aria-label', `Ilustracja: ${currentAnimal.name}${scenery ? ` — ${habitat.label.toLocaleLowerCase('pl')}` : ''}`);
+  stageCaptionEl.textContent = scenery ? habitat.label.toLocaleUpperCase('pl') : (phase === 'welcome' ? 'POZNAJMY SIĘ' : 'MAŁE SPOTKANIA');
+  stageEl.classList.toggle('with-scenery', scenery);
 }
-for (const id of ['scenery', 'setting-scenery']) $(id).addEventListener('change', () => {
-  const enabled = $(id).checked;
-  $('scenery').checked = enabled;
-  $('setting-scenery').checked = enabled;
-  renderAppearance();
-});
+
+for (const el of [sceneryCheckbox, settingSceneryCheckbox]) {
+  el?.addEventListener('change', () => {
+    const enabled = el.checked;
+    sceneryCheckbox.checked = enabled;
+    settingSceneryCheckbox.checked = enabled;
+    renderAppearance();
+  });
+}
 
 function showAnimal(animal, animate = true) {
   currentAnimal = animal;
-  $('letter').replaceChildren(document.createTextNode(animal.key.toLocaleUpperCase('pl')));
+  letterEl.replaceChildren(document.createTextNode(animal.key.toLocaleUpperCase('pl')));
   const lowercase = document.createElement('span');
   lowercase.textContent = animal.key;
-  $('letter').append(lowercase);
-  $('animal-name').textContent = animal.name;
+  letterEl.append(lowercase);
+  animalNameEl.textContent = animal.name;
   renderAppearance();
-  $('stage-hint').querySelector('kbd').textContent = animal.inputKey.toUpperCase();
-  $('stage-hint').querySelector('span').textContent = `${animal.name} — spróbuj innego klawisza.`;
-  $('animal-content').classList.remove('appearing', 'greeting');
+  if (stageHintKbd) stageHintKbd.textContent = animal.inputKey.toUpperCase();
+  if (stageHintSpan) stageHintSpan.textContent = `${animal.name} — spróbuj innego klawisza.`;
+  animalContentEl.classList.remove('appearing', 'greeting');
   if (animate) {
-    // Restart only on accepted input, never on every raw keydown.
-    void $('animal-content').offsetWidth;
-    $('animal-content').classList.add('appearing');
+    void animalContentEl.offsetWidth;
+    animalContentEl.classList.add('appearing');
   }
 }
 
 function greet() {
   clearTimeout(greetingTimer);
-  $('animal-content').classList.remove('greeting', 'appearing');
-  void $('animal-content').offsetWidth;
-  $('animal-content').classList.add('greeting');
-  greetingTimer = setTimeout(() => $('animal-content').classList.remove('greeting'), 1400);
+  animalContentEl.classList.remove('greeting', 'appearing');
+  void animalContentEl.offsetWidth;
+  animalContentEl.classList.add('greeting');
+  greetingTimer = setTimeout(() => animalContentEl.classList.remove('greeting'), 1400);
 }
 
 function discoverAnimal(key, event = {}) {
@@ -192,13 +261,13 @@ function cancelParentHold() {
   holdKey = null;
   holdBorder?.remove();
   holdBorder = null;
-  $('parent-button').classList.remove('holding');
+  parentButton?.classList.remove('holding');
 }
 
 function triggerHoldAnimation(onComplete) {
   cancelParentHold();
-  const button = $('parent-button');
-  const { width: w, height: h } = button.getBoundingClientRect();
+  if (!parentButton) return;
+  const { width: w, height: h } = parentButton.getBoundingClientRect();
   const r = Math.max(1, h / 2 - 1);
   const ns = 'http://www.w3.org/2000/svg';
   holdBorder = document.createElementNS(ns, 'svg');
@@ -211,8 +280,8 @@ function triggerHoldAnimation(onComplete) {
   trace.setAttribute('d', `M${w / 2} 1 H${w - h / 2} A${r} ${r} 0 0 1 ${w - 1} ${h / 2} A${r} ${r} 0 0 1 ${w - h / 2} ${h - 1} H${h / 2} A${r} ${r} 0 0 1 1 ${h / 2} A${r} ${r} 0 0 1 ${h / 2} 1 Z`);
   trace.setAttribute('pathLength', '100');
   holdBorder.append(trace);
-  button.append(holdBorder);
-  button.classList.add('holding');
+  parentButton.append(holdBorder);
+  parentButton.classList.add('holding');
   holdTimer = setTimeout(() => {
     cancelParentHold();
     onComplete();
@@ -242,13 +311,11 @@ function releaseKeyboard() {
 async function protectKeyboard() {
   if (!wantsFullscreen) {
     const message = 'Zabawa w oknie. Skróty przeglądarki i systemu mogą być aktywne.';
-    $('lock-status').textContent = message;
+    if (lockStatusEl) lockStatusEl.textContent = message;
     notice(message);
     return { locked: false, allowed: true };
   }
 
-  // If the browser does not support the Keyboard Lock API (e.g. Android TV, mobile, Safari, Firefox),
-  // we enter fullscreen gracefully without blocking the session.
   if (!hasKeyboardLock) {
     if (document.fullscreenEnabled && document.documentElement.requestFullscreen && !document.fullscreenElement) {
       try {
@@ -261,15 +328,17 @@ async function protectKeyboard() {
     const message = isFullscreen
       ? 'Zabawa w trybie pełnoekranowym.'
       : 'Zabawa w oknie.';
-    $('lock-status').textContent = message;
+    if (lockStatusEl) lockStatusEl.textContent = message;
     return { locked: false, allowed: true, reason: message };
   }
 
   const result = await acquireKeyboardProtection({ document, keyboard: navigator.keyboard, secureContext: window.isSecureContext });
   locked = result.locked;
-  $('lock-status').textContent = locked
-    ? 'Przeglądarka włączyła przechwytywanie wszystkich dostępnych jej klawiszy. Klawisz Windows/Super i część skrótów nadal mogą być zarezerwowane przez system.'
-    : result.reason;
+  if (lockStatusEl) {
+    lockStatusEl.textContent = locked
+      ? 'Przeglądarka włączyła przechwytywanie wszystkich dostępnych jej klawiszy. Klawisz Windows/Super i część skrótów nadal mogą być zarezerwowane przez system.'
+      : result.reason;
+  }
   return { ...result, allowed: locked };
 }
 
@@ -285,56 +354,57 @@ function startClock() {
 function updateClock() {
   const seconds = Math.max(0, Math.ceil((endAt - performance.now()) / 1000));
   const label = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-  if ($('session-clock').textContent !== label) $('session-clock').textContent = label;
+  if (sessionClockEl && sessionClockEl.textContent !== label) sessionClockEl.textContent = label;
 }
 
 async function begin(resuming = false) {
   if (!['welcome','paused'].includes(phase)) return;
   phase = 'starting';
   cancelSpeech();
-  $('start').disabled = true;
-  $('resume').disabled = true;
-  $('paused').close();
-  $('protection-error').hidden = true;
+  startButton.disabled = true;
+  resumeButton.disabled = true;
+  pausedDialog.close();
+  if (protectionErrorEl) protectionErrorEl.hidden = true;
   if (!resuming) {
-    remaining = Number($('duration').value) * 60_000;
-    wantsFullscreen = $('fullscreen').checked;
+    remaining = Number(durationSelect.value) * 60_000;
+    wantsFullscreen = fullscreenCheckbox.checked;
   }
-  // Fullscreen needs to be requested directly from the parent's activation.
   const protection = await protectKeyboard();
   if (phase !== 'starting') return;
   if (!protection.allowed) {
     releaseKeyboard();
     if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
-    $('start').disabled = false;
-    $('resume').disabled = false;
+    startButton.disabled = false;
+    resumeButton.disabled = false;
     const explanation = `${protection.reason} Zabawa nie została uruchomiona bez wybranej blokady.`;
     if (resuming) {
       phase = 'paused';
-      $('pause-detail').textContent = `${explanation} Spróbuj ponownie lub zakończ zabawę, aby zmienić ustawienia.`;
-      $('paused').showModal();
+      if (pauseDetailEl) pauseDetailEl.textContent = `${explanation} Spróbuj ponownie lub zakończ zabawę, aby zmienić ustawienia.`;
+      pausedDialog.showModal();
     } else {
       phase = 'welcome';
-      $('protection-error').textContent = `${explanation} Spróbuj ponownie. Jeśli chcesz bawić się bez blokady, wyłącz opcję „Pełny ekran i blokada”.`;
-      $('protection-error').hidden = false;
+      if (protectionErrorEl) {
+        protectionErrorEl.textContent = `${explanation} Spróbuj ponownie. Jeśli chcesz bawić się bez blokady, wyłącz opcję „Pełny ekran i blokada”.`;
+        protectionErrorEl.hidden = false;
+      }
     }
     return;
   }
   if (!resuming) showAnimal(album.reset(), false);
-  $('welcome').hidden = true;
-  $('finish').hidden = true;
-  $('play-instructions').hidden = false;
+  welcomeSection.hidden = true;
+  finishSection.hidden = true;
+  playInstructionsSection.hidden = false;
   renderAppearance();
-  $('parent-button').textContent = 'Dla rodzica · przytrzymaj';
-  $('parent-button').setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
+  parentButton.textContent = 'Dla rodzica · przytrzymaj';
+  parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
   document.body.classList.add('playing');
   phase = 'playing';
   state.start();
   startClock();
-  $('start').disabled = false;
-  $('resume').disabled = false;
+  startButton.disabled = false;
+  resumeButton.disabled = false;
   if (document.hidden || !document.hasFocus()) { pause(); return; }
-  if (!resuming && $('sound').checked && polishVoice && state.accept()) speak(currentAnimal);
+  if (!resuming && soundCheckbox.checked && polishVoice && state.accept()) speak(currentAnimal);
   updateReadiness();
 }
 
@@ -351,10 +421,10 @@ function pause() {
   cancelSpeech();
   releaseKeyboard();
   updateReadiness();
-  $('pause-detail').textContent = 'Na czas przerwy blokada klawiatury jest zwolniona. Przy wznowieniu spróbujemy włączyć ją ponownie, jeśli wybrano pełny ekran.';
-  $('lock-status').textContent = 'Zabawa jest wstrzymana. Blokada klawiatury jest zwolniona.';
-  $('paused').showModal();
-  setTimeout(() => $('resume').focus(), 50);
+  if (pauseDetailEl) pauseDetailEl.textContent = 'Na czas przerwy blokada klawiatury jest zwolniona. Przy wznowieniu spróbujemy włączyć ją ponownie, jeśli wybrano pełny ekran.';
+  if (lockStatusEl) lockStatusEl.textContent = 'Zabawa jest wstrzymana. Blokada klawiatury jest zwolniona.';
+  pausedDialog.showModal();
+  setTimeout(() => resumeButton.focus(), 50);
 }
 
 function finish() {
@@ -366,26 +436,27 @@ function finish() {
   cancelParentHold();
   cancelSpeech();
   updateReadiness();
-  $('paused').close();
-  $('welcome').hidden = true;
-  $('finish').hidden = false;
-  $('play-instructions').hidden = true;
-  $('stage-caption').textContent = 'DO ZOBACZENIA';
-  $('stage-hint').hidden = true;
-  $('notice').hidden = true;
-  $('animal-content').classList.remove('greeting', 'appearing');
-  resetGaze($('stage'));
+  pausedDialog.close();
+  welcomeSection.hidden = true;
+  finishSection.hidden = false;
+  playInstructionsSection.hidden = true;
+  stageCaptionEl.textContent = 'DO ZOBACZENIA';
+  if (stageHintEl) stageHintEl.hidden = true;
+  if (noticeEl) noticeEl.hidden = true;
+  animalContentEl.classList.remove('greeting', 'appearing');
+  resetGaze(stageEl);
   document.body.classList.remove('playing');
   document.body.classList.add('sleeping');
-  $('stage').hidden = true;
-  $('parent-button').textContent = 'Dla rodzica · przytrzymaj';
-  $('parent-button').setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wrócić do początku');
-  setTimeout(() => $('parent-button').focus(), 50);
+  stageEl.hidden = true;
+  parentButton.textContent = 'Dla rodzica · przytrzymaj';
+  parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wrócić do początku');
+  setTimeout(() => parentButton.focus(), 50);
 }
 
-$('start').addEventListener('click', () => begin());
-$('resume').addEventListener('click', () => begin(true));
-$('stop').addEventListener('click', returnToWelcome);
+startButton.addEventListener('click', () => begin());
+resumeButton.addEventListener('click', () => begin(true));
+stopButton.addEventListener('click', returnToWelcome);
+
 function returnToWelcome() {
   phase = 'welcome';
   state.stop();
@@ -395,52 +466,54 @@ function returnToWelcome() {
   clearTimeout(noticeTimer);
   cancelParentHold();
   cancelSpeech();
-  resetGaze($('stage'));
+  resetGaze(stageEl);
   releaseKeyboard();
   remaining = 0;
   endAt = 0;
   updateReadiness();
-  $('paused').close();
+  pausedDialog.close();
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   document.body.classList.remove('playing', 'sleeping');
-  $('finish').hidden = true;
-  $('welcome').hidden = false;
-  $('play-instructions').hidden = true;
-  $('notice').hidden = true;
-  $('protection-error').hidden = true;
-  $('start').disabled = false;
-  $('resume').disabled = false;
-  $('stage').hidden = false;
-  $('stage-hint').hidden = false;
-  $('stage-caption').textContent = 'POZNAJMY SIĘ';
-  $('parent-button').textContent = 'Dla rodzica';
-  $('parent-button').setAttribute('aria-label', 'Dla rodzica');
-  $('lock-status').textContent = 'Zabawa jest zakończona. Blokada klawiatury jest zwolniona.';
+  finishSection.hidden = true;
+  welcomeSection.hidden = false;
+  playInstructionsSection.hidden = true;
+  if (noticeEl) noticeEl.hidden = true;
+  if (protectionErrorEl) protectionErrorEl.hidden = true;
+  startButton.disabled = false;
+  resumeButton.disabled = false;
+  stageEl.hidden = false;
+  if (stageHintEl) stageHintEl.hidden = false;
+  stageCaptionEl.textContent = 'POZNAJMY SIĘ';
+  parentButton.textContent = 'Dla rodzica';
+  parentButton.setAttribute('aria-label', 'Dla rodzica');
+  if (lockStatusEl) lockStatusEl.textContent = 'Zabawa jest zakończona. Blokada klawiatury jest zwolniona.';
   showAnimal(album.reset(), false);
-  $('start').focus();
+  startButton.focus();
 }
-$('settings-done').addEventListener('click', () => $('settings').close());
-$('parent-button').addEventListener('click', () => {
+
+$('settings-done').addEventListener('click', () => settingsDialog.close());
+parentButton.addEventListener('click', () => {
   if (phase === 'welcome') {
-    $('settings').showModal();
-    $('setting-scenery').focus();
+    settingsDialog.showModal();
+    settingSceneryCheckbox.focus();
   }
 });
-$('parent-button').addEventListener('pointerdown', startParentHold);
-$('parent-button').addEventListener('pointerleave', releaseParentHold);
+parentButton.addEventListener('pointerdown', startParentHold);
+parentButton.addEventListener('pointerleave', releaseParentHold);
 for (const name of ['pointerup','pointercancel']) window.addEventListener(name, releaseParentHold);
+
 // Touch pointers may retain implicit capture after moving outside the button.
-$('parent-button').addEventListener('pointermove', event => {
+parentButton.addEventListener('pointermove', event => {
   if (event.pointerId !== holdPointerId) return;
-  const rect = $('parent-button').getBoundingClientRect();
+  const rect = parentButton.getBoundingClientRect();
   if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) cancelParentHold();
 });
 window.addEventListener('resize', cancelParentHold);
-$('paused').addEventListener('cancel', event => event.preventDefault());
-$('sound').addEventListener('change', () => {
+pausedDialog.addEventListener('cancel', event => event.preventDefault());
+soundCheckbox.addEventListener('change', () => {
   cancelSpeech();
   updateVoices();
-  if ($('sound').checked && polishVoice) speak(currentAnimal);
+  if (soundCheckbox.checked && polishVoice) speak(currentAnimal);
 });
 
 window.addEventListener('keydown', event => {
@@ -454,7 +527,6 @@ window.addEventListener('keydown', event => {
 
   if (phase === 'paused') {
     event.stopImmediatePropagation();
-    // Safety buffer: drop any buffered toddler key hammering in the first 400ms after opening pause
     if (performance.now() - pauseOpenedAt < 400) {
       event.preventDefault();
       return;
@@ -466,17 +538,16 @@ window.addEventListener('keydown', event => {
     }
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Tab') {
       event.preventDefault();
-      if (document.activeElement === $('stop')) $('resume').focus();
-      else $('stop').focus();
+      if (document.activeElement === stopButton) resumeButton.focus();
+      else stopButton.focus();
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      if (document.activeElement === $('stop')) returnToWelcome();
+      if (document.activeElement === stopButton) returnToWelcome();
       else begin(true);
       return;
     }
-    // Any other key (e.g. letters, numbers) is ignored in pause mode
     event.preventDefault();
     return;
   }
@@ -501,17 +572,17 @@ window.addEventListener('keydown', event => {
   }
 
   if (phase === 'welcome') {
-    if ($('settings').open) {
+    if (settingsDialog.open) {
       if (isBackKey(event)) {
         event.preventDefault();
-        $('settings').close();
-        $('parent-button').focus();
+        settingsDialog.close();
+        parentButton.focus();
         return;
       }
       const settingControls = [
-        $('settings').querySelector('.close-button'),
-        $('setting-scenery'),
-        $('duration'),
+        settingsDialog.querySelector('.close-button'),
+        settingSceneryCheckbox,
+        durationSelect,
         $('settings-done')
       ].filter(Boolean);
       if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
@@ -528,48 +599,45 @@ window.addEventListener('keydown', event => {
         prev?.focus();
         return;
       }
-      if (document.activeElement === $('setting-scenery') && (event.key === 'Enter' || event.key === ' ')) {
+      if (document.activeElement === settingSceneryCheckbox && (event.key === 'Enter' || event.key === ' ')) {
         event.preventDefault();
-        $('setting-scenery').checked = !$('setting-scenery').checked;
-        $('setting-scenery').dispatchEvent(new Event('change'));
+        settingSceneryCheckbox.checked = !settingSceneryCheckbox.checked;
+        settingSceneryCheckbox.dispatchEvent(new Event('change'));
         return;
       }
-      if (document.activeElement === $('duration')) {
-        const sel = $('duration');
+      if (document.activeElement === durationSelect) {
         if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
           event.preventDefault();
-          if (sel.selectedIndex < sel.options.length - 1) sel.selectedIndex++;
-          else sel.selectedIndex = 0;
-          sel.dispatchEvent(new Event('change'));
+          if (durationSelect.selectedIndex < durationSelect.options.length - 1) durationSelect.selectedIndex++;
+          else durationSelect.selectedIndex = 0;
+          durationSelect.dispatchEvent(new Event('change'));
           return;
         }
         if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
           event.preventDefault();
-          if (sel.selectedIndex > 0) sel.selectedIndex--;
-          else sel.selectedIndex = sel.options.length - 1;
-          sel.dispatchEvent(new Event('change'));
+          if (durationSelect.selectedIndex > 0) durationSelect.selectedIndex--;
+          else durationSelect.selectedIndex = durationSelect.options.length - 1;
+          durationSelect.dispatchEvent(new Event('change'));
           return;
         }
       }
-      if ((document.activeElement === $('settings-done') || document.activeElement === $('settings').querySelector('.close-button')) && (event.key === 'Enter' || event.key === ' ')) {
+      if ((document.activeElement === $('settings-done') || document.activeElement === settingsDialog.querySelector('.close-button')) && (event.key === 'Enter' || event.key === ' ')) {
         event.preventDefault();
-        $('settings').close();
-        $('parent-button').focus();
+        settingsDialog.close();
+        parentButton.focus();
         return;
       }
       return;
     }
 
-    // Settings dialog is closed
     if (event.key === 'p' || event.key === 'P' || event.key === 'F1') {
       event.preventDefault();
-      $('settings').showModal();
-      $('setting-scenery').focus();
+      settingsDialog.showModal();
+      settingSceneryCheckbox.focus();
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
-      if (document.activeElement === $('start')) {
-        // Let standard button activation trigger click
+      if (document.activeElement === startButton) {
         return;
       }
       if (['sound', 'fullscreen', 'scenery'].includes(document.activeElement?.id)) {
@@ -578,10 +646,10 @@ window.addEventListener('keydown', event => {
         document.activeElement.dispatchEvent(new Event('change'));
         return;
       }
-      if (document.activeElement === $('parent-button')) {
+      if (document.activeElement === parentButton) {
         event.preventDefault();
-        $('settings').showModal();
-        $('setting-scenery').focus();
+        settingsDialog.showModal();
+        settingSceneryCheckbox.focus();
         return;
       }
       if (!['BUTTON', 'A', 'INPUT', 'SELECT'].includes(document.activeElement?.tagName)) {
@@ -590,32 +658,31 @@ window.addEventListener('keydown', event => {
         return;
       }
     }
-    // Spatial D-Pad navigation for Arrow keys on TV
-    if (document.activeElement === $('start')) {
-      if (event.key === 'ArrowDown') { event.preventDefault(); $('sound').focus(); return; }
-      if (event.key === 'ArrowUp') { event.preventDefault(); $('parent-button').focus(); return; }
-    } else if (document.activeElement === $('sound')) {
-      if (event.key === 'ArrowRight') { event.preventDefault(); $('fullscreen').focus(); return; }
-      if (event.key === 'ArrowUp') { event.preventDefault(); $('start').focus(); return; }
+    if (document.activeElement === startButton) {
+      if (event.key === 'ArrowDown') { event.preventDefault(); soundCheckbox.focus(); return; }
+      if (event.key === 'ArrowUp') { event.preventDefault(); parentButton.focus(); return; }
+    } else if (document.activeElement === soundCheckbox) {
+      if (event.key === 'ArrowRight') { event.preventDefault(); fullscreenCheckbox.focus(); return; }
+      if (event.key === 'ArrowUp') { event.preventDefault(); startButton.focus(); return; }
       if (event.key === 'ArrowDown') { event.preventDefault(); document.querySelector('.footer-links a')?.focus(); return; }
-    } else if (document.activeElement === $('fullscreen')) {
-      if (event.key === 'ArrowLeft') { event.preventDefault(); $('sound').focus(); return; }
-      if (event.key === 'ArrowRight') { event.preventDefault(); $('scenery').focus(); return; }
-      if (event.key === 'ArrowUp') { event.preventDefault(); $('start').focus(); return; }
+    } else if (document.activeElement === fullscreenCheckbox) {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); soundCheckbox.focus(); return; }
+      if (event.key === 'ArrowRight') { event.preventDefault(); sceneryCheckbox.focus(); return; }
+      if (event.key === 'ArrowUp') { event.preventDefault(); startButton.focus(); return; }
       if (event.key === 'ArrowDown') { event.preventDefault(); document.querySelector('.footer-links a')?.focus(); return; }
-    } else if (document.activeElement === $('scenery')) {
-      if (event.key === 'ArrowLeft') { event.preventDefault(); $('fullscreen').focus(); return; }
-      if (event.key === 'ArrowUp') { event.preventDefault(); $('start').focus(); return; }
+    } else if (document.activeElement === sceneryCheckbox) {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); fullscreenCheckbox.focus(); return; }
+      if (event.key === 'ArrowUp') { event.preventDefault(); startButton.focus(); return; }
       if (event.key === 'ArrowDown') { event.preventDefault(); document.querySelector('.footer-links a')?.focus(); return; }
-    } else if (document.activeElement === $('parent-button')) {
-      if (event.key === 'ArrowDown') { event.preventDefault(); $('start').focus(); return; }
+    } else if (document.activeElement === parentButton) {
+      if (event.key === 'ArrowDown') { event.preventDefault(); startButton.focus(); return; }
       if (event.key === 'ArrowLeft') { event.preventDefault(); document.querySelector('.brand')?.focus(); return; }
     } else if (document.activeElement?.matches?.('.brand')) {
-      if (event.key === 'ArrowRight') { event.preventDefault(); $('parent-button').focus(); return; }
-      if (event.key === 'ArrowDown') { event.preventDefault(); $('start').focus(); return; }
+      if (event.key === 'ArrowRight') { event.preventDefault(); parentButton.focus(); return; }
+      if (event.key === 'ArrowDown') { event.preventDefault(); startButton.focus(); return; }
     } else if (document.activeElement?.matches?.('.footer-links a')) {
-      if (event.key === 'ArrowUp') { event.preventDefault(); $('scenery').focus(); return; }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); $('start').focus(); return; }
+      if (event.key === 'ArrowUp') { event.preventDefault(); sceneryCheckbox.focus(); return; }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); startButton.focus(); return; }
     }
     return;
   }
@@ -628,8 +695,7 @@ window.addEventListener('keydown', event => {
     pause();
     return;
   }
-  // Allow parent hold via keyboard ('p' / 'P' or holding Enter/Space on parent-button)
-  if ((event.key === 'p' || event.key === 'P' || (document.activeElement === $('parent-button') && (event.key === 'Enter' || event.key === ' '))) && !event.repeat) {
+  if ((event.key === 'p' || event.key === 'P' || (document.activeElement === parentButton && (event.key === 'Enter' || event.key === ' '))) && !event.repeat) {
     if (!holdKey) {
       holdKey = event.key;
       triggerHoldAnimation(pause);
@@ -655,19 +721,16 @@ for (const type of ['contextmenu','wheel','dragstart']) window.addEventListener(
   if (phase === 'playing' || phase === 'finished') event.preventDefault();
 }, { capture: true, passive: false });
 
-// Capture movement across the whole viewport, including the header and notices.
-// Leaving the picture must not cancel a fast mouse move or centre the pupils.
 function followPointer(event) {
-  if (phase === 'playing' && (event.pointerType === 'mouse' || event.isPrimary)) updateGaze($('stage'), event);
+  if (phase === 'playing' && (event.pointerType === 'mouse' || event.isPrimary)) updateGaze(stageEl, event);
 }
 for (const type of ['pointermove', 'pointerover']) window.addEventListener(type, followPointer, { capture: true, passive: true });
 for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, event => {
-  if (event.isPrimary && event.pointerType !== 'mouse') resetGaze($('stage'));
+  if (event.isPrimary && event.pointerType !== 'mouse') resetGaze(stageEl);
 }, { capture: true, passive: true });
 document.querySelector('main').addEventListener('pointerdown', event => {
   if (phase === 'playing') {
     event.preventDefault();
-    // One contact starts one discovery; holding or adding fingers cannot repeat it.
     if (event.isPrimary && event.button === 0) discoverAnimal(' ');
   }
 });
@@ -677,14 +740,13 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) pause();
 });
-window.addEventListener('blur', () => { resetGaze($('stage')); cancelParentHold(); pause(); });
+window.addEventListener('blur', () => { resetGaze(stageEl); cancelParentHold(); pause(); });
 window.addEventListener('pagehide', () => { clearTimeout(sessionTimer); clearInterval(clockTimer); cancelAnimationFrame(readinessFrame); cancelParentHold(); cancelSpeech(); releaseKeyboard(); state.stop(); });
 window.addEventListener('pageshow', event => {
-  // A page restored from the back/forward cache must not look active while inert.
   if (event.persisted && phase === 'playing') pause();
 });
 showAnimal(currentAnimal, false);
-setTimeout(() => $('start')?.focus(), 50);
+setTimeout(() => startButton?.focus(), 50);
 
 if (new URLSearchParams(location.search).get('debug') === '1') {
   const { mountDebugPanel } = await import('./debug-mode.js');

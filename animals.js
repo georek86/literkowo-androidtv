@@ -108,11 +108,23 @@ export const animals = [
 
 // Keep spelling on screen, but make every animal reachable without AltGr.
 export function normalizeAnimalKey(key) {
+  if (typeof key !== 'string') return '';
+  if (key.length === 1 && key >= 'a' && key <= 'z') return key;
   return key.toLocaleLowerCase('pl').replaceAll('ł', 'l').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+const animalsByInputKey = new Map();
+for (const animal of animals) {
+  let list = animalsByInputKey.get(animal.inputKey);
+  if (!list) {
+    list = [];
+    animalsByInputKey.set(animal.inputKey, list);
+  }
+  list.push(animal);
+}
+
 export function animalForKey(key) {
-  return animals.find(animal => animal.inputKey === normalizeAnimalKey(key));
+  return animalsByInputKey.get(normalizeAnimalKey(key))?.[0];
 }
 
 // Each letter and the full album have independent shuffled bags. A bag is
@@ -141,7 +153,7 @@ export class AnimalAlbum {
   }
   next(key = ' ') {
     const letter = normalizeAnimalKey(key);
-    const group = animals.filter(animal => animal.inputKey === letter);
+    const group = animalsByInputKey.get(letter) || [];
     const pool = group.length ? group : animals;
     const bagKey = group.length ? letter : '*';
     let bag = this.bags.get(bagKey);
@@ -434,8 +446,13 @@ const specialIllustrations = {
     + line('M174 129L152 86M196 129L218 86','#96745a',3) + ellipse(185,135,31,26,c) + eyes(174,196,130) + smile(185,147),
 };
 
+const illustrationCache = new Map();
+
 export function illustration(animal, { scenery = true } = {}) {
   const { kind, color } = animal;
+  const cacheKey = `${kind}_${color}_${scenery ? 1 : 0}`;
+  const cached = illustrationCache.get(cacheKey);
+  if (cached) return cached;
   let art;
   if (Object.hasOwn(moreIllustrations, kind)) art = moreIllustrations[kind](color);
   else if (Object.hasOwn(extendedIllustrations, kind)) art = extendedIllustrations[kind](color);
@@ -448,5 +465,7 @@ export function illustration(animal, { scenery = true } = {}) {
   else if (['alpaca','hippo','cat','cow','rabbit','fox','moose','bear','sheep','dog','panda','elephant','deer','tiger','zebra','foal','beaver','hamster','goat','horse','lion','mouse','monkey','squirrel'].includes(kind)) art = mammal(kind,color);
   else throw new Error(`Brak ilustracji zwierzątka: ${kind}`);
   const background = scenery ? habitatArt(animal) : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 370 270" aria-hidden="true">${background}<ellipse cx="187" cy="241" rx="100" ry="9" fill="#63765b" opacity=".16"/><g class="animal-body" stroke="#6c6452" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round">${art}</g></svg>`;
+  const result = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 370 270" aria-hidden="true">${background}<ellipse cx="187" cy="241" rx="100" ry="9" fill="#63765b" opacity=".16"/><g class="animal-body" stroke="#6c6452" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round">${art}</g></svg>`;
+  illustrationCache.set(cacheKey, result);
+  return result;
 }
