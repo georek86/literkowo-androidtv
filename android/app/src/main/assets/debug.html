@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Literkowo — przegląd i testy</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./debug.css"><script type="module" src="./debug.js"></script>
+</head>
+<body class="catalogue">
+  <header><a href="./">← Literkowo</a><span>DLA RODZICA / TESTERA</span></header>
+  <main>
+    <h1>Zwierzątka pod lupą.</h1>
+    <p>Te same ilustracje i przypisania, których używa gra. Przesuń kursor po ilustracji, aby zobaczyć ruch źrenic. Dotknij ilustracji, aby ją powiększyć i sprawdzić ruch palcem. Możesz też porównać tła i posłuchać nazw.</p>
+    <section class="test-links" aria-label="Testowanie gry">
+      <div><h2>Sprawdź działanie gry</h2><p>Sesja testowa trwa 10 sekund. Panel pokazuje stan gry i ostatni odebrany klawisz; pozwala też od razu przejść do nocy.</p></div>
+      <a class="button" href="./?debug=1">Uruchom tryb testowy →</a>
+    </section>
+    <form class="filters" onsubmit="return false">
+      <label>Szukaj nazwy<input id="search" type="search" placeholder="np. krowa" autocomplete="off"></label>
+      <label>Klawisz<select id="letter-filter"><option value="">Wszystkie klawisze</option></select></label>
+      <label>Tło ilustracji<select id="background"><option value="#e8eddf">Z gry — szałwia</option><option value="#f6f3eb">Kremowe</option><option value="#ffffff">Białe</option><option value="#182832">Nocne</option></select></label>
+      <label class="check"><input id="scenery" type="checkbox" checked> Zmienna sceneria</label>
+      <label class="check"><input id="grayscale" type="checkbox"> Skala szarości</label>
+      <button id="reset" type="button">Resetuj filtry</button>
+    </form>
+    <p class="note">Zmiana tła i skala szarości dotyczą tylko podglądu. Wyłącz scenerię, aby porównać sylwetki na jednolitym tle. To pomoc w ocenie wzrokowej, bez automatycznej oceny kontrastu ilustracji.</p>
+    <p id="voice-status" role="status"></p>
+    <p id="count" role="status"></p>
+    <div class="animal-grid" id="animal-grid"></div>
+    <p id="empty" hidden>Brak zwierzątek pasujących do filtrów.</p>
+    <section class="mapping-note"><h2>A pozostałe klawisze?</h2><p>Spacja, Enter, strzałki, cyfry, dotyk i litery bez przypisanej grupy losują z całego albumu. Litera losuje wśród pasujących nazw. Pierwszeństwo mają zwierzątka jeszcze niewidziane w bieżącej zabawie, również po zmianie klawisza lub użyciu dotyku. Potem wracają w tasowanej kolejności, bez bezpośrednich powtórzeń, jeśli jest wybór. Kolejność kart w galerii nie jest kolejnością wyświetlania w grze. Nie potrzeba polskich klawiszy: C obejmuje też Ć, L — Ł, S — Ś, a Z — Ź i Ż. Nazwy i litery na ekranie zachowują polską pisownię. Same Shift, Ctrl, Alt i Meta nie zmieniają obrazka.</p></section>
+  </main>
+  <dialog id="preview" aria-labelledby="preview-title"><button id="close-preview" type="button">Zamknij ×</button><h2 id="preview-title"></h2><div id="preview-image" class="animal-preview"></div><p id="preview-key"></p></dialog>
+</body>
+</html>
