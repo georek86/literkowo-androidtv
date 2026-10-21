@@ -1,4 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="20" fill="#e6ebdd"/>
-  <text x="18" y="47" font-size="45" font-family="Georgia, serif" fill="#4c6652">l</text>
+  <!-- Main rounded card background - sage green, same as original -->
+  <rect width="64" height="64" rx="18" fill="#e8eddf"/>
+
+  <!-- Letter 'l' - Georgia serif style, same green as original -->
+  <text x="16" y="50" font-size="46" font-family="Georgia, serif" font-weight="400" fill="#4c6652">l</text>
+
+  <!-- Dot after the letter - original amber/brown accent color -->
+  <circle cx="34" cy="46" r="4.5" fill="#b2815d"/>
+
+  <!-- Fork symbol (⑂) in top-right corner as a small badge -->
+  <!-- Badge background circle - white with light border -->
+  <circle cx="51" cy="13" r="11" fill="#ffffff" stroke="#c8d4bc" stroke-width="1.5"/>
+
+  <!-- Git fork icon drawn in vector - two nodes + one output node + connecting lines -->
+  <!-- Top-left node -->
+  <circle cx="47" cy="9" r="2.5" fill="#4c6652"/>
+  <!-- Top-right node -->
+  <circle cx="55" cy="9" r="2.5" fill="#4c6652"/>
+  <!-- Bottom center (merge) node -->
+  <circle cx="51" cy="17" r="2.5" fill="#b2815d"/>
+  <!-- Left branch line: top-left → bottom center -->
+  <line x1="47" y1="11.5" x2="51" y2="14.5" stroke="#4c6652" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Right branch line: top-right → bottom center -->
+  <line x1="55" y1="11.5" x2="51" y2="14.5" stroke="#4c6652" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Vertical lines on top nodes -->
+  <line x1="47" y1="6" x2="47" y2="9" stroke="#4c6652" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="55" y1="6" x2="55" y2="9" stroke="#4c6652" stroke-width="1.8" stroke-linecap="round"/>
 </svg>
