@@ -1,8 +1,12 @@
-import { AnimalAlbum, illustration } from './animals.js';
+import { AnimalAlbum, illustration, animals } from './animals.js';
 import { updateGaze, resetGaze } from './gaze.js';
 import { habitatFor } from './habitats.js';
 import { isAnimalInput, PlayState } from './play-state.js';
 import { acquireKeyboardProtection } from './keyboard-protection.js';
+import { QuizEngine } from './quiz-engine.js';
+import { CollectionManager } from './collection.js';
+import { getFactForAnimal } from './animal-facts.js';
+import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, setSoundEnabled } from './sfx.js';
 
 const $ = id => document.getElementById(id);
 
@@ -40,6 +44,38 @@ const lockStatusEl = $('lock-status');
 const sessionClockEl = $('session-clock');
 const voiceNoteEl = $('voice-note');
 const touchNoteEl = $('touch-note');
+
+// New Educational & Quiz DOM references
+const starsBadge = $('stars-badge');
+const starsCountEl = $('stars-count');
+const cardsButton = $('cards-button');
+const cardsLabelEl = $('cards-label');
+const modeSelector = $('mode-selector');
+const quizOverlayEl = $('quiz-overlay');
+const quizModeNameEl = $('quiz-mode-name');
+const quizPromptTextEl = $('quiz-prompt-text');
+const quizOptionsEl = $('quiz-options');
+const spellingSlotsEl = $('spelling-slots');
+const quizCelebrationEl = $('quiz-celebration');
+const celebrationTextEl = $('celebration-text');
+const cardsDialog = $('cards-dialog');
+const cardsGridEl = $('cards-grid');
+const cardsProgressFillEl = $('cards-progress-fill');
+const cardsSummaryEl = $('cards-summary');
+const cardsCloseBtn = $('cards-close-btn');
+const cardDetailDialog = $('card-detail-dialog');
+const cardDetailIllustrationEl = $('card-detail-illustration');
+const cardDetailLetterEl = $('card-detail-letter');
+const cardDetailNameEl = $('card-detail-name');
+const cardDetailFactEl = $('card-detail-fact');
+const cardDetailSpeakBtn = $('card-detail-speak');
+const cardDetailCloseBtn = $('card-detail-close');
+const lettersMasteryGridEl = $('letters-mastery-grid');
+const resetStatsBtn = $('reset-stats-btn');
+
+const collection = new CollectionManager(animals);
+const quizEngine = new QuizEngine(animals);
+let selectedCardAnimal = null;
 
 const state = new PlayState();
 const synth = window.speechSynthesis;
@@ -163,24 +199,28 @@ function cancelSpeech() {
   state.speaking = false;
 }
 
-function speak(animal) {
-  if (!soundCheckbox.checked || !polishVoice || !synth) return;
+function speakText(text, onComplete) {
+  if (!soundCheckbox.checked || !polishVoice || !synth) {
+    if (onComplete) onComplete();
+    return;
+  }
   const version = ++speechVersion;
   state.speaking = true;
   updateReadiness();
-  const utterance = new SpeechSynthesisUtterance(animal.name);
+  const utterance = new SpeechSynthesisUtterance(text);
   activeUtterance = utterance;
   utterance.voice = polishVoice;
   utterance.lang = 'pl-PL';
-  utterance.rate = .82;
-  utterance.pitch = 1;
-  utterance.volume = .55;
+  utterance.rate = .84;
+  utterance.pitch = 1.05;
+  utterance.volume = .6;
   const complete = () => {
     if (version !== speechVersion) return;
     clearTimeout(speechTimeout);
     activeUtterance = null;
     state.speechEnded();
     updateReadiness();
+    if (onComplete) onComplete();
   };
   utterance.onend = complete;
   utterance.onerror = () => {
@@ -192,9 +232,13 @@ function speak(animal) {
     cancelSpeech();
     state.speechEnded();
     updateReadiness();
-    notice('Lektor nie odpowiada. Zabawa działa dalej bez oczekiwania na głos.');
+    if (onComplete) onComplete();
   }, 7000);
-  try { synth.speak(utterance); } catch { utterance.onerror(); }
+  try { synth.speak(utterance); } catch { complete(); }
+}
+
+function speak(animal) {
+  speakText(animal.name);
 }
 
 function renderAppearance() {
@@ -253,6 +297,203 @@ function discoverAnimal(key, event = {}) {
   else greet();
   speak(animal);
   updateReadiness();
+}
+
+function updateStarsBadge() {
+  if (starsCountEl) starsCountEl.textContent = collection.getStars();
+  if (cardsLabelEl) cardsLabelEl.textContent = `Album kart (${collection.getUnlockedCount()}/${collection.getTotalCardsCount()})`;
+}
+
+function renderQuizOptions(options, targetChar) {
+  if (!quizOptionsEl) return;
+  quizOptionsEl.replaceChildren();
+  for (const opt of options) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quiz-option-btn';
+    btn.dataset.letter = opt;
+    btn.textContent = opt;
+    btn.setAttribute('aria-label', `Wybierz literkę ${opt}`);
+    btn.addEventListener('click', () => handleQuizInput(opt));
+    quizOptionsEl.appendChild(btn);
+  }
+  setTimeout(() => quizOptionsEl.querySelector('.quiz-option-btn')?.focus(), 80);
+}
+
+function renderSpellingSlots(question) {
+  if (!spellingSlotsEl) return;
+  spellingSlotsEl.replaceChildren();
+  for (let i = 0; i < question.letters.length; i++) {
+    const isFilled = i < question.stepIndex;
+    const isCurrent = i === question.stepIndex;
+    const slot = document.createElement('div');
+    slot.className = `spelling-slot ${isFilled ? 'filled' : ''} ${isCurrent ? 'active-slot' : ''}`;
+    slot.textContent = isFilled ? question.letters[i] : (isCurrent ? '_' : '');
+    spellingSlotsEl.appendChild(slot);
+  }
+}
+
+function setupQuizQuestion() {
+  if (quizEngine.mode === 'explore') {
+    if (quizOverlayEl) quizOverlayEl.hidden = true;
+    if (animalContentEl) animalContentEl.hidden = false;
+    showAnimal(currentAnimal);
+    return;
+  }
+
+  const q = quizEngine.nextQuestion();
+  if (!q) return;
+
+  if (quizCelebrationEl) quizCelebrationEl.hidden = true;
+  if (quizOverlayEl) quizOverlayEl.hidden = false;
+
+  if (q.type === 'guess-letter') {
+    quizModeNameEl.textContent = 'ZGADNIJ LITERKĘ';
+    quizPromptTextEl.textContent = q.prompt;
+    spellingSlotsEl.hidden = true;
+    quizOptionsEl.hidden = false;
+    renderQuizOptions(q.options, q.targetChar);
+    letterEl.replaceChildren(document.createTextNode('?'));
+    illustrationEl.innerHTML = '<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="70" fill="#d8dfcd"/><text x="100" y="125" font-family="Georgia" font-size="75" font-weight="bold" fill="#50694e" text-anchor="middle">?</text></svg>';
+    animalNameEl.textContent = '???';
+    stageCaptionEl.textContent = 'ZGADNIJ LITERKĘ';
+    speakText(q.speech);
+  } else if (q.type === 'first-letter') {
+    quizModeNameEl.textContent = 'PIERWSZA LITERA';
+    quizPromptTextEl.textContent = q.prompt;
+    spellingSlotsEl.hidden = true;
+    quizOptionsEl.hidden = false;
+    renderQuizOptions(q.options, q.targetChar);
+    showAnimal(q.animal);
+    stageCaptionEl.textContent = 'PIERWSZA LITERA';
+    speakText(q.speech);
+  } else if (q.type === 'spelling') {
+    quizModeNameEl.textContent = 'NAPISZ SŁOWO';
+    quizPromptTextEl.textContent = q.prompt;
+    quizOptionsEl.hidden = true;
+    spellingSlotsEl.hidden = false;
+    renderSpellingSlots(q);
+    showAnimal(q.animal);
+    stageCaptionEl.textContent = 'NAPISZ SŁOWO';
+    speakText(q.speech);
+  }
+}
+
+function handleQuizInput(key) {
+  if (phase !== 'playing' || quizEngine.mode === 'explore') return;
+  if (!quizEngine.currentQuestion) return;
+
+  const res = quizEngine.checkInput(key);
+  if (!res) return;
+
+  if (res.correct) {
+    if (res.finished) {
+      playCorrect();
+      collection.recordAnswer(res.animal.key, true);
+      const { stars, unlockedAnimal } = collection.addStar();
+      updateStarsBadge();
+
+      showAnimal(res.animal);
+      if (quizCelebrationEl) quizCelebrationEl.hidden = false;
+      if (celebrationTextEl) celebrationTextEl.textContent = 'Brawo! ⭐ +1';
+
+      if (unlockedAnimal) {
+        setTimeout(() => {
+          playFanfare();
+          notice(`🎉 Odblokowano nową kartę: ${unlockedAnimal.name}!`);
+        }, 400);
+      } else {
+        playStar();
+      }
+
+      speakText(res.speech, () => {
+        setTimeout(() => {
+          if (quizCelebrationEl) quizCelebrationEl.hidden = true;
+          if (phase === 'playing') setupQuizQuestion();
+        }, 1300);
+      });
+    } else {
+      // Intermediate spelling step
+      playCorrect();
+      renderSpellingSlots(quizEngine.currentQuestion);
+      speakText(res.speech);
+    }
+  } else {
+    // Incorrect answer
+    playTryAgain();
+    collection.recordAnswer(quizEngine.currentQuestion.targetChar || quizEngine.currentQuestion.animal?.key, false);
+
+    const btns = quizOptionsEl?.querySelectorAll('.quiz-option-btn') || [];
+    for (const b of btns) {
+      if (b.dataset.letter?.toLowerCase() === key?.toLowerCase()) {
+        b.classList.add('wrong');
+        setTimeout(() => b.classList.remove('wrong'), 450);
+      }
+    }
+    quizPromptTextEl?.classList.add('wrong');
+    setTimeout(() => quizPromptTextEl?.classList.remove('wrong'), 450);
+
+    speakText(res.speech);
+  }
+}
+
+function openCardsAlbum() {
+  renderCardsGrid();
+  cardsDialog.showModal();
+  setTimeout(() => {
+    const firstCard = cardsGridEl?.querySelector('.card-item:not(.locked)');
+    (firstCard || cardsCloseBtn)?.focus();
+  }, 60);
+}
+
+function renderCardsGrid() {
+  if (!cardsGridEl) return;
+  cardsGridEl.replaceChildren();
+  const unlockedCount = collection.getUnlockedCount();
+  const totalCount = collection.getTotalCardsCount();
+  if (cardsSummaryEl) cardsSummaryEl.textContent = `Odblokowano: ${unlockedCount} / ${totalCount} kart (⭐ ${collection.getStars()})`;
+  if (cardsProgressFillEl) cardsProgressFillEl.style.width = `${Math.round((unlockedCount / totalCount) * 100)}%`;
+
+  for (const animal of animals) {
+    const isUnlocked = collection.isCardUnlocked(animal);
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = `card-item ${isUnlocked ? '' : 'locked'}`;
+    card.setAttribute('aria-label', isUnlocked ? `Karta: ${animal.name}` : 'Zablokowana karta');
+    if (isUnlocked) {
+      card.innerHTML = `<span class="card-letter-badge">${animal.key.toUpperCase()}</span><div class="card-thumb">${illustration(animal, { scenery: false })}</div><span class="card-title">${animal.name}</span>`;
+      card.addEventListener('click', () => openCardDetail(animal));
+    } else {
+      card.innerHTML = `<span class="card-letter-badge">?</span><div class="card-thumb"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#ccd4c3"/><text x="20" y="25" font-family="Georgia" font-size="16" fill="#88967f" text-anchor="middle">?</text></svg></div><span class="card-title">Zablokowana</span>`;
+    }
+    cardsGridEl.appendChild(card);
+  }
+}
+
+function openCardDetail(animal) {
+  selectedCardAnimal = animal;
+  if (!cardDetailDialog) return;
+  cardDetailIllustrationEl.innerHTML = illustration(animal, { scenery: false });
+  cardDetailLetterEl.textContent = animal.key.toUpperCase();
+  cardDetailNameEl.textContent = animal.name;
+  const fact = getFactForAnimal(animal);
+  cardDetailFactEl.textContent = fact;
+  cardDetailDialog.showModal();
+  setTimeout(() => cardDetailSpeakBtn?.focus(), 60);
+  speakText(fact);
+}
+
+function renderMasteryGrid() {
+  if (!lettersMasteryGridEl) return;
+  lettersMasteryGridEl.replaceChildren();
+  const stats = collection.getStatsSummary();
+  for (const item of stats) {
+    const cell = document.createElement('div');
+    cell.className = `letter-mastery-cell ${item.status}`;
+    cell.title = item.status === 'untested' ? 'Jeszcze niećwiczona' : `Skuteczność: ${item.rate}% (${item.correct}/${item.total})`;
+    cell.textContent = item.letter.toUpperCase();
+    lettersMasteryGridEl.appendChild(cell);
+  }
 }
 
 function cancelParentHold() {
@@ -390,7 +631,13 @@ async function begin(resuming = false) {
     }
     return;
   }
-  if (!resuming) showAnimal(album.reset(), false);
+  if (!resuming) {
+    if (quizEngine.mode === 'explore') {
+      showAnimal(album.reset(), false);
+    } else {
+      setupQuizQuestion();
+    }
+  }
   welcomeSection.hidden = true;
   finishSection.hidden = true;
   playInstructionsSection.hidden = false;
@@ -404,7 +651,9 @@ async function begin(resuming = false) {
   startButton.disabled = false;
   resumeButton.disabled = false;
   if (document.hidden || !document.hasFocus()) { pause(); return; }
-  if (!resuming && soundCheckbox.checked && polishVoice && state.accept()) speak(currentAnimal);
+  if (!resuming && soundCheckbox.checked && polishVoice && state.accept()) {
+    if (quizEngine.mode === 'explore') speak(currentAnimal);
+  }
   updateReadiness();
 }
 
@@ -482,22 +731,58 @@ function returnToWelcome() {
   startButton.disabled = false;
   resumeButton.disabled = false;
   stageEl.hidden = false;
+  if (quizOverlayEl) quizOverlayEl.hidden = true;
+  if (quizCelebrationEl) quizCelebrationEl.hidden = true;
+  if (animalContentEl) animalContentEl.hidden = false;
   if (stageHintEl) stageHintEl.hidden = false;
   stageCaptionEl.textContent = 'POZNAJMY SIĘ';
   parentButton.textContent = 'Dla rodzica';
   parentButton.setAttribute('aria-label', 'Dla rodzica');
   if (lockStatusEl) lockStatusEl.textContent = 'Zabawa jest zakończona. Blokada klawiatury jest zwolniona.';
   showAnimal(album.reset(), false);
+  updateStarsBadge();
   startButton.focus();
 }
 
 $('settings-done').addEventListener('click', () => settingsDialog.close());
 parentButton.addEventListener('click', () => {
   if (phase === 'welcome') {
+    renderMasteryGrid();
     settingsDialog.showModal();
     settingSceneryCheckbox.focus();
   }
 });
+
+cardsButton?.addEventListener('click', openCardsAlbum);
+starsBadge?.addEventListener('click', openCardsAlbum);
+cardsCloseBtn?.addEventListener('click', () => cardsDialog.close());
+cardDetailCloseBtn?.addEventListener('click', () => {
+  cardDetailDialog.close();
+  cardsDialog.showModal();
+});
+cardDetailSpeakBtn?.addEventListener('click', () => {
+  if (selectedCardAnimal) speakText(getFactForAnimal(selectedCardAnimal));
+});
+resetStatsBtn?.addEventListener('click', () => {
+  collection.resetProgress();
+  updateStarsBadge();
+  renderMasteryGrid();
+  notice('Zresetowano postępy i gwiazdki.');
+});
+
+modeSelector?.querySelectorAll('.mode-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    modeSelector.querySelectorAll('.mode-pill').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-checked', 'false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-checked', 'true');
+    quizEngine.setMode(btn.dataset.mode);
+    playClick();
+  });
+});
+
 parentButton.addEventListener('pointerdown', startParentHold);
 parentButton.addEventListener('pointerleave', releaseParentHold);
 for (const name of ['pointerup','pointercancel']) window.addEventListener(name, releaseParentHold);
@@ -513,6 +798,7 @@ pausedDialog.addEventListener('cancel', event => event.preventDefault());
 soundCheckbox.addEventListener('change', () => {
   cancelSpeech();
   updateVoices();
+  setSoundEnabled(soundCheckbox.checked);
   if (soundCheckbox.checked && polishVoice) speak(currentAnimal);
 });
 
@@ -572,6 +858,81 @@ window.addEventListener('keydown', event => {
   }
 
   if (phase === 'welcome') {
+    if (cardDetailDialog?.open) {
+      if (isBackKey(event)) {
+        event.preventDefault();
+        cardDetailDialog.close();
+        cardsDialog.showModal();
+        return;
+      }
+      if (event.key === 'ArrowRight' || event.key === 'ArrowLeft' || event.key === 'Tab') {
+        event.preventDefault();
+        if (document.activeElement === cardDetailSpeakBtn) cardDetailCloseBtn?.focus();
+        else cardDetailSpeakBtn?.focus();
+        return;
+      }
+      if ((document.activeElement === cardDetailCloseBtn || document.activeElement === cardDetailDialog.querySelector('.close-button')) && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        cardDetailDialog.close();
+        cardsDialog.showModal();
+        return;
+      }
+      return;
+    }
+
+    if (cardsDialog?.open) {
+      if (isBackKey(event)) {
+        event.preventDefault();
+        cardsDialog.close();
+        cardsButton?.focus();
+        return;
+      }
+      const cardItems = Array.from(cardsGridEl?.querySelectorAll('.card-item') || []);
+      const closeBtn = $('cards-close-btn');
+      const dialogClose = cardsDialog.querySelector('.close-button');
+      const allFocusable = [...cardItems, closeBtn, dialogClose].filter(Boolean);
+
+      if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
+        event.preventDefault();
+        const idx = allFocusable.indexOf(document.activeElement);
+        if (idx >= 0 && idx < allFocusable.length - 1) {
+          allFocusable[idx + 1]?.focus();
+        } else {
+          allFocusable[0]?.focus();
+        }
+        return;
+      }
+      if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
+        event.preventDefault();
+        const idx = allFocusable.indexOf(document.activeElement);
+        if (idx > 0) {
+          allFocusable[idx - 1]?.focus();
+        } else {
+          allFocusable[allFocusable.length - 1]?.focus();
+        }
+        return;
+      }
+      if (event.key === 'ArrowRight' && cardItems.includes(document.activeElement)) {
+        event.preventDefault();
+        const idx = cardItems.indexOf(document.activeElement);
+        if (idx < cardItems.length - 1) cardItems[idx + 1]?.focus();
+        return;
+      }
+      if (event.key === 'ArrowLeft' && cardItems.includes(document.activeElement)) {
+        event.preventDefault();
+        const idx = cardItems.indexOf(document.activeElement);
+        if (idx > 0) cardItems[idx - 1]?.focus();
+        return;
+      }
+      if ((document.activeElement === closeBtn || document.activeElement === dialogClose) && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        cardsDialog.close();
+        cardsButton?.focus();
+        return;
+      }
+      return;
+    }
+
     if (settingsDialog.open) {
       if (isBackKey(event)) {
         event.preventDefault();
@@ -583,6 +944,7 @@ window.addEventListener('keydown', event => {
         settingsDialog.querySelector('.close-button'),
         settingSceneryCheckbox,
         durationSelect,
+        resetStatsBtn,
         $('settings-done')
       ].filter(Boolean);
       if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
@@ -621,6 +983,11 @@ window.addEventListener('keydown', event => {
           return;
         }
       }
+      if (document.activeElement === resetStatsBtn && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        resetStatsBtn.click();
+        return;
+      }
       if ((document.activeElement === $('settings-done') || document.activeElement === settingsDialog.querySelector('.close-button')) && (event.key === 'Enter' || event.key === ' ')) {
         event.preventDefault();
         settingsDialog.close();
@@ -628,6 +995,38 @@ window.addEventListener('keydown', event => {
         return;
       }
       return;
+    }
+
+    const modePills = Array.from(modeSelector?.querySelectorAll('.mode-pill') || []);
+    if (modePills.includes(document.activeElement)) {
+      const idx = modePills.indexOf(document.activeElement);
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        if (idx % 2 === 0 && idx + 1 < modePills.length) modePills[idx + 1]?.focus();
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (idx % 2 === 1) modePills[idx - 1]?.focus();
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (idx < 2 && idx + 2 < modePills.length) modePills[idx + 2]?.focus();
+        else startButton?.focus();
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (idx >= 2) modePills[idx - 2]?.focus();
+        else cardsButton?.focus();
+        return;
+      }
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        document.activeElement.click();
+        return;
+      }
     }
 
     if (event.key === 'p' || event.key === 'P' || event.key === 'F1') {
@@ -646,8 +1045,14 @@ window.addEventListener('keydown', event => {
         document.activeElement.dispatchEvent(new Event('change'));
         return;
       }
+      if (document.activeElement === cardsButton || document.activeElement === starsBadge) {
+        event.preventDefault();
+        openCardsAlbum();
+        return;
+      }
       if (document.activeElement === parentButton) {
         event.preventDefault();
+        renderMasteryGrid();
         settingsDialog.showModal();
         settingSceneryCheckbox.focus();
         return;
@@ -660,7 +1065,12 @@ window.addEventListener('keydown', event => {
     }
     if (document.activeElement === startButton) {
       if (event.key === 'ArrowDown') { event.preventDefault(); soundCheckbox.focus(); return; }
-      if (event.key === 'ArrowUp') { event.preventDefault(); parentButton.focus(); return; }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const activePill = modeSelector?.querySelector('.mode-pill.active') || modePills[2] || modePills[0];
+        activePill?.focus();
+        return;
+      }
     } else if (document.activeElement === soundCheckbox) {
       if (event.key === 'ArrowRight') { event.preventDefault(); fullscreenCheckbox.focus(); return; }
       if (event.key === 'ArrowUp') { event.preventDefault(); startButton.focus(); return; }
@@ -674,12 +1084,16 @@ window.addEventListener('keydown', event => {
       if (event.key === 'ArrowLeft') { event.preventDefault(); fullscreenCheckbox.focus(); return; }
       if (event.key === 'ArrowUp') { event.preventDefault(); startButton.focus(); return; }
       if (event.key === 'ArrowDown') { event.preventDefault(); document.querySelector('.footer-links a')?.focus(); return; }
-    } else if (document.activeElement === parentButton) {
-      if (event.key === 'ArrowDown') { event.preventDefault(); startButton.focus(); return; }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); document.querySelector('.brand')?.focus(); return; }
-    } else if (document.activeElement?.matches?.('.brand')) {
+    } else if (document.activeElement === cardsButton) {
       if (event.key === 'ArrowRight') { event.preventDefault(); parentButton.focus(); return; }
-      if (event.key === 'ArrowDown') { event.preventDefault(); startButton.focus(); return; }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); document.querySelector('.brand')?.focus(); return; }
+      if (event.key === 'ArrowDown') { event.preventDefault(); modePills[0]?.focus(); return; }
+    } else if (document.activeElement === parentButton) {
+      if (event.key === 'ArrowDown') { event.preventDefault(); modePills[1]?.focus() || startButton.focus(); return; }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); cardsButton?.focus() || document.querySelector('.brand')?.focus(); return; }
+    } else if (document.activeElement?.matches?.('.brand')) {
+      if (event.key === 'ArrowRight') { event.preventDefault(); cardsButton?.focus() || parentButton.focus(); return; }
+      if (event.key === 'ArrowDown') { event.preventDefault(); modePills[0]?.focus() || startButton.focus(); return; }
     } else if (document.activeElement?.matches?.('.footer-links a')) {
       if (event.key === 'ArrowUp') { event.preventDefault(); sceneryCheckbox.focus(); return; }
       if (event.key === 'ArrowLeft') { event.preventDefault(); startButton.focus(); return; }
@@ -703,6 +1117,10 @@ window.addEventListener('keydown', event => {
     return;
   }
   if (!isAnimalInput(event)) return;
+  if (quizEngine.mode !== 'explore') {
+    handleQuizInput(event.key);
+    return;
+  }
   discoverAnimal(event.key, event);
 }, { capture: true });
 
@@ -745,6 +1163,7 @@ window.addEventListener('pagehide', () => { clearTimeout(sessionTimer); clearInt
 window.addEventListener('pageshow', event => {
   if (event.persisted && phase === 'playing') pause();
 });
+updateStarsBadge();
 showAnimal(currentAnimal, false);
 setTimeout(() => startButton?.focus(), 50);
 

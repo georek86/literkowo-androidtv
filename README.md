@@ -12,15 +12,26 @@ WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2. roku życia.
 
 Wspólna, interaktywna zabawa przy ekranie nadal jest czasem ekranowym. Aplikacja nie zastępuje zabawy bez ekranu ani kontaktu z opiekunem. Nie jest narzędziem terapeutycznym i nie ma potwierdzonej skuteczności edukacyjnej. Ustawienia timera nie są zaleceniem zdrowotnym.
 
-## Jak korzystać
+## Jak korzystać i tryby zabawy
 
-Album zawiera 100 zwierząt pod 22 klawiszami. Większość liter ma kilka zwierzątek; pod E, I i U jest po jednym. Polskie litery działają też bez AltGr.
+Aplikacja zawiera 100 zwierząt z polskimi nazwami, lektorem i ciekawostkami, w pełni obsługiwana za pomocą fizycznej klawiatury lub pilota na Android TV.
 
-- Zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i Spacja losują z całego albumu; litera — spośród pasujących nazw. Pierwszeństwo mają zwierzęta jeszcze niewidziane w bieżącej zabawie, także po zmianie litery lub dotyku. Potem wracają w tasowanej kolejności bez bezpośrednich powtórzeń, gdy jest wybór. Poruszaj kursorem lub palcem, aby skierować wzrok zwierzątka.
-- Głos, scenerię i czas zabawy ustawia dorosły. Przytrzymanie „Dla rodzica” przez 2 sekundy otwiera pauzę; „Zakończ zabawę” wraca na początek.
-- Pełny ekran i blokada klawiatury zależą od przeglądarki i systemu. Nie gwarantują zablokowania wszystkich skrótów, gestów ani przycisków urządzenia.
+### 4 tryby zabawy (wybór na ekranie startowym):
+1. **Odkrywanie (swobodne poznawanie)**:
+   - Dziecko wciska dowolną literkę na klawiaturze i odkrywa zwierzątko na tę literę wraz z poprawną wymową polskiego lektora. Spacja, cyfry i dotyk losują z całego albumu.
+2. **Zgadnij literkę (nauka ze słuchu i wzroku)**:
+   - Lektor pyta np. *„Gdzie jest literka M?”*. Dziecko szuka odpowiedniego klawisza na fizycznej klawiaturze (lub wybiera kafelek na ekranie). Za poprawną odpowiedź zdobywa gwiazdkę!
+3. **Pierwsza litera**:
+   - Na ekranie pojawia się zwierzątko (np. Pies). Lektor pyta: *„Na jaką literę zaczyna się pies?”*. Dziecko naciska klawisz `P`.
+4. **Napisz słowo (literowanie)**:
+   - Na ekranie pojawia się zwierzątko o krótkiej nazwie (np. KOT, PIES, LIS, FOKA, SOWA) oraz puste klocki `[ _ ] [ _ ] [ _ ]`.
+   - Dziecko wstukuje litery po kolei. Po ułożeniu całego słowa rozbrzmiewa radosna fanfara!
 
-Bez reklam, kont i analityki. Polski lektor zależy od głosów dostępnych na urządzeniu; niektóre wymagają internetu i mogą przesyłać nazwy zwierząt dostawcy syntezy mowy.
+### System nagród i kolekcja kart:
+- **Gwiazdki**: Za poprawne odpowiedzi w quizach dziecko otrzymuje gwiazdki.
+- **Album 100 kart ze zwierzątkami**: Zdobywanie gwiazdek odblokowuje kolejne karty w albumie. Każda karta zawiera ilustrację, nazwę oraz ciekawostkę przyrodniczą czytaną przez lektora.
+- **Efekty dźwiękowe (Web Audio)**: Radosne akordy sukcesu, dzwoneczki gwiazdek, fanfary i łagodne dźwięki motywujące (działające 100% offline, bez dodatkowych plików audio).
+- **Postępy w nauce liter (Dla rodzica)**: W panelu rodzica dostępna jest siatka całego polskiego alfabetu pokazująca, które litery dziecko opanowało już bezbłędnie (zielone), a które jeszcze ćwiczy (żółte).
 
 ## Obsługa na Android TV (klawiatura fizyczna)
 

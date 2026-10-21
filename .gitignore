@@ -10,6 +10,7 @@ codex-session-*.md
 
 # Android build outputs and binaries
 *.apk
+*.apks
 .gradle/
 build/
 android/.gradle/
