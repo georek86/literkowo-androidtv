@@ -33,8 +33,12 @@ export class PlayState {
 
 export function isAnimalInput(event) {
   if (['Escape','Shift','Control','Alt','AltGraph','Meta','Fn','FnLock','Dead','Unidentified','Process','Compose'].includes(event.key)) return false;
+  // Ignore Android TV / remote media, volume and back keys during play
+  if (['AudioVolumeUp','AudioVolumeDown','AudioVolumeMute','VolumeUp','VolumeDown','VolumeMute','MediaPlayPause','MediaStop','MediaTrackNext','MediaTrackPrevious','MediaFastForward','MediaRewind','ChannelUp','ChannelDown','Power','GoBack','BrowserBack'].includes(event.key)) return false;
   const altGraph = event.getModifierState?.('AltGraph');
-  // Also accept Polish letters produced with Option on a Mac.
-  const polishOption = event.altKey && !event.ctrlKey && !event.metaKey && /^[ąćęłńóśźż]$/i.test(event.key);
+  // Also accept Polish letters produced with Option on a Mac or Alt/AltGr on Android physical keyboards.
+  const isPolishLetter = /^[ąćęłńóśźż]$/i.test(event.key);
+  const polishOption = (event.altKey && !event.ctrlKey && !event.metaKey && isPolishLetter) ||
+                       (event.altKey && event.ctrlKey && isPolishLetter);
   return !(event.ctrlKey || event.metaKey || event.altKey) || Boolean(altGraph || polishOption);
 }

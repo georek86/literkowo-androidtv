@@ -22,6 +22,30 @@ Album zawiera 100 zwierząt pod 22 klawiszami. Większość liter ma kilka zwier
 
 Bez reklam, kont i analityki. Polski lektor zależy od głosów dostępnych na urządzeniu; niektóre wymagają internetu i mogą przesyłać nazwy zwierząt dostawcy syntezy mowy.
 
+## Obsługa na Android TV (klawiatura fizyczna)
+
+Aplikacja jest przystosowana do działania na telewizorach i dekoderach z **Android TV** sterowanych za pomocą fizycznej klawiatury (USB lub Bluetooth) oraz pilota:
+
+- **Uruchomienie i nawigacja po menu**:
+  - `Enter` / `Spacja` na ekranie startowym natychmiast rozpoczyna zabawę (przycisk *Zaczynamy* ma domyślne skupienie).
+  - Strzałki (`Góra`, `Dół`, `Lewo`, `Prawo`) oraz `Tab`: wygodna nawigacja przestrzenna (D-Pad) po przełącznikach opcji i menu rodzica.
+  - Wyraźne, kontrastowe podświetlenie aktywnego elementu dostosowane do oglądania z kanapy (10-foot UI).
+- **Podczas zabawy**:
+  - Naciśnięcie dowolnej litery (`A-Z`, polskie znaki z AltGr lub bez) pokazuje zwierzątko na tę literę. Klawiatura może mieć układ polski lub angielski (np. klawisz `C` obsługuje też `Ć`, `L` — `Ł`, `S` — `Ś`, `Z` — `Ż`/`Ź`).
+  - Spacja, cyfry i pozostałe klawisze losują zwierzątko z całego albumu.
+  - Klawisze multimedialne i głośności pilota/klawiatury są ignorowane — regulacja głośności nie zmienia zwierzątka.
+  - Klawisz `Escape` lub przycisk `Back` pilota wstrzymuje zabawę (pauza).
+  - Przytrzymanie klawisza `P` przez 2 sekundy (lub naciśnięcie z przycisku rodzica) wywołuje pauzę z widocznym okręgiem postępu.
+- **W menu pauzy**:
+  - Strzałki `Góra`/`Dół` oraz `Tab` przełączają między przyciskami *Wznów zabawę* a *Zakończ zabawę*.
+  - `Enter` lub `Spacja` aktywuje zaznaczony przycisk, a `Escape` wznawia zabawę.
+  - Przypadkowe stukanie w litery przez dziecko jest ignorowane i nie zamyka pauzy.
+- **Zakończenie czasu („Zwierzątka poszły spać”)**:
+  - Dorosły może wrócić do początku naciskając `Escape` lub przytrzymując `Enter`/`Spację` przez 2 sekundy.
+- **Pełny ekran bez blokady sprzętowej**:
+  - Na Android TV przeglądarki nie obsługują desktopowego API blokady klawiatury (`navigator.keyboard.lock`). Aplikacja automatycznie dostosowuje opcję do czystego pełnego ekranu i nie blokuje startu gry.
+  - Aplikację można otworzyć w przeglądarce dla Android TV (np. TV Bro, JioPages, Chrome) lub zainstalować jako PWA na ekranie głównym.
+
 ## Odpowiedzialność
 
 Aplikacja jest udostępniana „tak jak jest”, bez gwarancji poprawności, dostępności, przydatności do określonego celu ani korzyści zdrowotnych, rozwojowych lub edukacyjnych. Decyzję o udostępnieniu jej dziecku, sposobie i czasie korzystania podejmuje rodzic lub opiekun.

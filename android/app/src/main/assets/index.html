@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f3eb">
+  <meta name="description" content="Interaktywna zabawa rodzica lub opiekuna z dzieckiem — wspólne poznawanie zwierzątek.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Literkowo — małe spotkania ze zwierzętami</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='20' fill='%23e6ebdd'/%3E%3Ctext x='18' y='47' font-size='45' fill='%234c6652'%3El%3C/text%3E%3C/svg%3E">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Literkowo — strona główna"><span class="brand-mark">l<span>•</span></span>literkowo<span class="brand-dot">.</span></a>
+    <span class="tagline">małe odkrycia, bez pośpiechu</span>
+    <button class="parent-button" id="parent-button" type="button"><span aria-hidden="true">⚙</span> Dla rodzica</button>
+  </header>
+
+  <main>
+    <section class="welcome" id="welcome" aria-labelledby="welcome-title">
+      <span class="eyebrow"><span class="tiny-leaf" aria-hidden="true"></span> SPOKOJNA ZABAWA RAZEM</span>
+      <h1 id="welcome-title">Mała literka.<br>Wielkie <em>odkrycie.</em></h1>
+      <p class="intro">Interaktywna zabawa rodzica z dzieckiem.<br>Dotknij ekranu lub naciśnij klawisz.</p>
+      <button class="primary-button" id="start" type="button" autofocus>Zaczynamy <span aria-hidden="true">↗</span></button>
+      <p class="start-note">Wyłącznie wspólnie i pod nadzorem opiekuna.</p>
+      <p class="screen-note" id="screen-note">WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2 lat. Wspólna zabawa również jest czasem ekranowym. <a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></p>
+      <div class="welcome-options">
+        <label class="switch-label"><input id="sound" type="checkbox"><span class="switch" aria-hidden="true"></span> Głos lektora</label>
+        <label class="switch-label"><input id="fullscreen" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Pełny ekran i blokada</label>
+        <label class="switch-label"><input id="scenery" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Zmienna sceneria</label>
+      </div>
+      <p class="voice-note" id="voice-note"></p>
+      <p class="voice-note" id="touch-note" hidden>Na urządzeniu dotykowym zabawa uruchamia się w oknie. Dotknij obszaru zabawy, aby poznać kolejne zwierzątko.</p>
+      <p class="protection-error" id="protection-error" role="status" hidden></p>
+    </section>
+
+    <section class="animal-stage" id="stage" aria-label="Zwierzątko">
+      <div class="stage-top"><span class="eyebrow" id="stage-caption">POZNAJMY SIĘ</span><span class="little-star" aria-hidden="true">✳</span></div>
+      <div class="animal-content" id="animal-content">
+        <span class="big-letter" id="letter" aria-hidden="true">K<span>k</span></span>
+        <div class="illustration" id="illustration" role="img" aria-label="Ilustracja kota"></div>
+        <div class="animal-label"><span class="name-rule" aria-hidden="true"></span><h2 id="animal-name">kot</h2><span class="name-rule" aria-hidden="true"></span></div>
+      </div>
+      <div class="readiness" id="readiness" role="progressbar" aria-label="Gotowość na kolejne zwierzątko" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" hidden>
+        <svg viewBox="0 0 28 28" aria-hidden="true"><circle class="readiness-track" cx="14" cy="14" r="10"/><circle class="readiness-fill" id="readiness-fill" cx="14" cy="14" r="10" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg>
+        <span id="readiness-label">Można dalej</span>
+      </div>
+      <div class="stage-bottom" id="stage-hint"><kbd>K</kbd><span>jak kot. Spróbuj innej literki.</span></div>
+      <span class="ground-leaf leaf-one" aria-hidden="true"></span><span class="ground-leaf leaf-two" aria-hidden="true"></span>
+    </section>
+
+    <section class="play-instructions" id="play-instructions" hidden><span class="status-dot"></span> Dotknij ekranu lub naciśnij klawisz.
+      <span class="session-clock" id="session-clock" role="timer" aria-live="off" aria-label="Pozostały czas zabawy">3:00</span>
+    </section>
+    <section class="finish" id="finish" aria-labelledby="sleep-title" hidden>
+      <svg class="night-landscape" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g fill="#aab8c5" opacity=".6"><circle cx="130" cy="150" r="2"/><circle cx="310" cy="90" r="2"/><circle cx="480" cy="180" r="1.5"/><circle cx="720" cy="100" r="2"/><circle cx="1050" cy="210" r="2"/><circle cx="980" cy="410" r="1.5"/><circle cx="210" cy="390" r="1.5"/></g>
+        <path class="night-moon" d="M906 116a51 51 0 1 0 56 66 48 48 0 0 1-56-66Z" fill="#d9d7b5"/>
+        <path d="M0 640Q190 510 420 650T850 620T1200 620V800H0Z" fill="#243d46"/>
+        <path d="M0 720Q260 610 550 720T1200 690V800H0Z" fill="#1a3038"/>
+        <g transform="translate(565 660)" fill="#82928c" stroke="#82928c" stroke-linejoin="round">
+          <ellipse cx="40" cy="32" rx="64" ry="30" stroke="none"/>
+          <path d="M-13 28-22-12 0-1 21-10 26 27Z" stroke-width="6"/>
+          <path d="M-12 16q6 6 12 0m8 0q6 6 12 0" fill="none" stroke="#243d46" stroke-width="3" stroke-linecap="round"/>
+          <path d="M91 35q-4 28-43 14" fill="none" stroke="#657c76" stroke-width="12" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <div class="sleep-message">
+        <span class="eyebrow">DOBRANOC, ZWIERZĄTKA</span>
+        <h1 id="sleep-title" tabindex="-1">Zwierzątka<br> poszły spać.</h1>
+        <p>Teraz czas na odpoczynek od ekranu.</p>
+        <p class="finish-hint" id="finish-hint">Przytrzymaj Enter lub naciśnij Esc, aby wrócić</p>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer"><div><span aria-hidden="true">⌨</span> Każda mała rączka da radę</div><span class="footer-dot">·</span><div><span aria-hidden="true">♧</span> Bez punktów i pośpiechu</div><span class="footer-dot">·</span><nav class="footer-links" aria-label="Narzędzia dla rodzica"><a href="./debug.html"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 6Q7 3 2 5v14q5-2 10 1q5-3 10-1V5q-5-2-10 1Zm0 0v14"/></svg>Przegląd zwierzątek</a></nav></footer>
+  <p class="notice" id="notice" role="status" hidden></p>
+
+  <dialog id="settings" aria-labelledby="settings-title">
+    <form method="dialog"><button class="close-button" aria-label="Zamknij ustawienia">×</button></form>
+    <span class="eyebrow">CHWILA DLA WAS</span><h2 id="settings-title">Dla rodzica</h2>
+    <p class="dialog-intro">Interaktywna zabawa rodzica lub opiekuna z dzieckiem. Korzystajcie wyłącznie razem, pod stałym nadzorem dorosłego.</p>
+    <div class="setting-info"><strong>Małe odkrycia dotykiem i klawiaturą</strong><p>Każda zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i klawisze bez przypisanej litery losują z całego albumu. Litera losuje wśród pasujących nazw, np. N: nosorożec, niedźwiedź lub nietoperz. Pierwszeństwo mają zwierzątka jeszcze niewidziane w tej zabawie — również po zmianie klawisza lub użyciu dotyku. Gdy wszystkie pasujące zwierzątka zostały już pokazane, wracają w tasowanej kolejności, bez powtórzeń jedno po drugim, jeśli jest wybór. Pod E, I i U jest po jednym zwierzątku — kolejne naciśnięcie ponownie je wita. Nie trzeba używać AltGr: C obejmuje też Ć, L — Ł, S — Ś, a Z — Ź i Ż. Pełne kółko oznacza gotowość do kolejnego odkrycia; szybkie stuknięcia, dodatkowe palce i przytrzymane klawisze są pomijane.</p></div>
+    <label class="setting-row" for="setting-scenery"><span>Zmienna sceneria<small>Dopasowane otoczenie zwierzątka, np. las lub sawanna. Wyłącz, aby pokazywać jednolite tło.</small></span><input id="setting-scenery" type="checkbox" checked></label>
+    <label class="setting-row" for="duration"><span>Czas jednej zabawy<small>Po tym czasie zwierzątka odpoczną.</small></span><select id="duration"><option value="2">2 minuty</option><option value="3" selected>3 minuty</option><option value="5">5 minut</option></select></label>
+    <div class="setting-info"><strong>Klawiatura i pełny ekran</strong><p id="lock-status">Gdy wybierzesz „Pełny ekran i blokada”, gra wystartuje dopiero po włączeniu obu funkcji.</p><p>Gra prosi przeglądarkę o przechwycenie wszystkich dostępnych jej klawiszy. Windows/Super, Alt+Tab i inne skróty mogą jednak pozostać zarezerwowane przez system. Ich dodatkowa blokada wymaga ustawień systemowych. Sam pełny ekran ani F11 jej nie zapewniają.</p><p>W Chrome przytrzymaj Esc przez około 2 sekundy, aby wyjść z pełnego ekranu. Możesz też przytrzymać przycisk rodzica. Przycisku zasilania strona nie blokuje.</p></div>
+    <div class="setting-info"><strong>Dzieci i ekrany</strong><p>WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2. roku życia. Dla dzieci w wieku 2–4 lat zaleca nie więcej niż godzinę dziennie — im mniej, tym lepiej.</p><p>Wspólna, interaktywna zabawa przy ekranie nadal jest czasem ekranowym. Aplikacja nie zastępuje zabawy bez ekranu ani kontaktu z opiekunem. Nie jest narzędziem terapeutycznym i nie ma potwierdzonej skuteczności edukacyjnej. Ustawienia timera nie są zaleceniem zdrowotnym.</p><a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></div>
+    <div class="setting-info" id="responsibility"><strong>Odpowiedzialność</strong><p>Aplikacja jest udostępniana „tak jak jest”, bez gwarancji poprawności, dostępności, przydatności do określonego celu ani korzyści zdrowotnych, rozwojowych lub edukacyjnych. Decyzję o udostępnieniu jej dziecku, sposobie i czasie korzystania podejmuje rodzic lub opiekun.</p><p>W najszerszym zakresie dopuszczalnym przez obowiązujące prawo autorzy i współtwórcy wyłączają odpowiedzialność za szkody wynikające z korzystania z aplikacji lub niemożności jej użycia, w tym szkody dotyczące zdrowia, rozwoju dziecka, sprzętu lub danych. Zastrzeżenie to nie wyłącza ani nie ogranicza odpowiedzialności, której nie można wyłączyć lub ograniczyć na mocy prawa.</p></div>
+    <p class="privacy-note">Bez reklam, kont i śledzenia. Dostępność polskiego głosu i jego działanie offline zależą od przeglądarki oraz systemu.</p>
+    <button class="primary-button" id="settings-done" type="button">Gotowe</button>
+  </dialog>
+  <dialog id="paused" aria-labelledby="paused-title"><span class="eyebrow">MAŁA PRZERWA</span><h2 id="paused-title">Zabawa wstrzymana</h2><p>Wróćcie, kiedy będziecie gotowi.</p><p id="pause-detail"></p><button class="primary-button" id="resume" type="button">Wznów zabawę</button><button class="text-button" id="stop" type="button">Zakończ zabawę</button></dialog>
+</body>
+</html>

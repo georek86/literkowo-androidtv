@@ -15,6 +15,8 @@ const files = new Map([
   ['/animals.js', ['animals.js', 'text/javascript']],
   ['/play-state.js', ['play-state.js', 'text/javascript']],
   ['/keyboard-protection.js', ['keyboard-protection.js', 'text/javascript']],
+  ['/manifest.webmanifest', ['manifest.webmanifest', 'application/manifest+json']],
+  ['/icon.svg', ['icon.svg', 'image/svg+xml']],
 ]);
 const port = Number(process.env.PORT || 4173);
 createServer(async (req, res) => {

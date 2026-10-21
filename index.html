@@ -2,11 +2,15 @@
 <html lang="pl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f6f3eb">
   <meta name="description" content="Interaktywna zabawa rodzica lub opiekuna z dzieckiem — wspólne poznawanie zwierzątek.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Literkowo — małe spotkania ze zwierzętami</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='20' fill='%23e6ebdd'/%3E%3Ctext x='18' y='47' font-size='45' fill='%234c6652'%3El%3C/text%3E%3C/svg%3E">
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
 </head>
@@ -22,7 +26,7 @@
       <span class="eyebrow"><span class="tiny-leaf" aria-hidden="true"></span> SPOKOJNA ZABAWA RAZEM</span>
       <h1 id="welcome-title">Mała literka.<br>Wielkie <em>odkrycie.</em></h1>
       <p class="intro">Interaktywna zabawa rodzica z dzieckiem.<br>Dotknij ekranu lub naciśnij klawisz.</p>
-      <button class="primary-button" id="start" type="button">Zaczynamy <span aria-hidden="true">↗</span></button>
+      <button class="primary-button" id="start" type="button" autofocus>Zaczynamy <span aria-hidden="true">↗</span></button>
       <p class="start-note">Wyłącznie wspólnie i pod nadzorem opiekuna.</p>
       <p class="screen-note" id="screen-note">WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2 lat. Wspólna zabawa również jest czasem ekranowym. <a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></p>
       <div class="welcome-options">
@@ -66,7 +70,12 @@
           <path d="M91 35q-4 28-43 14" fill="none" stroke="#657c76" stroke-width="12" stroke-linecap="round"/>
         </g>
       </svg>
-      <div class="sleep-message"><span class="eyebrow">DOBRANOC, ZWIERZĄTKA</span><h1 id="sleep-title" tabindex="-1">Zwierzątka<br> poszły spać.</h1><p>Teraz czas na odpoczynek od ekranu.</p></div>
+      <div class="sleep-message">
+        <span class="eyebrow">DOBRANOC, ZWIERZĄTKA</span>
+        <h1 id="sleep-title" tabindex="-1">Zwierzątka<br> poszły spać.</h1>
+        <p>Teraz czas na odpoczynek od ekranu.</p>
+        <p class="finish-hint" id="finish-hint">Przytrzymaj Enter lub naciśnij Esc, aby wrócić</p>
+      </div>
     </section>
   </main>
 

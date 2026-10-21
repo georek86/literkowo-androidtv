@@ -1,0 +1,20 @@
+{
+  "name": "Literkowo — małe spotkania ze zwierzętami",
+  "short_name": "Literkowo",
+  "description": "Interaktywna zabawa rodzica lub opiekuna z dzieckiem — wspólne poznawanie zwierzątek.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#f6f3eb",
+  "theme_color": "#f6f3eb",
+  "categories": ["education", "kids", "games"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
