@@ -4,6 +4,23 @@
 
 import { normalizeAnimalKey } from './animals.js';
 
+// Activate on pointerdown (snappy touch feedback) without running the action a
+// second time when the browser follows up with a synthetic click. Clicks with
+// detail === 0 come from keyboard activation and are still accepted.
+function bindPress(el, handler) {
+  let lastPointerAt = 0;
+  el.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || event.isPrimary === false) return;
+    lastPointerAt = performance.now();
+    handler(event);
+  });
+  el.addEventListener('click', event => {
+    if (event.detail === 0) { handler(event); return; }
+    if (event.button !== 0) return;
+    if (performance.now() - lastPointerAt > 450) handler(event);
+  });
+}
+
 export const KEYBOARD_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Ó', 'Ę'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ł', 'Ą', 'Ś', 'Ć'],
@@ -89,7 +106,7 @@ export class KeyboardMapHelper {
           this.triggerKey(key);
         };
 
-        btn.addEventListener('pointerdown', handlePress);
+        bindPress(btn, handlePress);
 
         rowEl.appendChild(btn);
         this.keyElements.set(key.toLowerCase(), btn);
@@ -117,8 +134,7 @@ export class KeyboardMapHelper {
       e.stopPropagation();
       this.triggerKey('r');
     };
-    repeatBtn.addEventListener('pointerdown', handleRepeat);
-    repeatBtn.addEventListener('click', handleRepeat);
+    bindPress(repeatBtn, handleRepeat);
     this.keyElements.set('r-action', repeatBtn);
 
     // 2. Space / Feed button (widest center key)
@@ -133,8 +149,7 @@ export class KeyboardMapHelper {
       e.stopPropagation();
       this.triggerKey(' ');
     };
-    spaceBtn.addEventListener('pointerdown', handleSpace);
-    spaceBtn.addEventListener('click', handleSpace);
+    bindPress(spaceBtn, handleSpace);
     this.keyElements.set(' ', spaceBtn);
 
     // 3. Backspace button (for spelling mode)
@@ -149,8 +164,7 @@ export class KeyboardMapHelper {
       e.stopPropagation();
       this.triggerKey('Backspace');
     };
-    backspaceBtn.addEventListener('pointerdown', handleBackspace);
-    backspaceBtn.addEventListener('click', handleBackspace);
+    bindPress(backspaceBtn, handleBackspace);
     this.keyElements.set('backspace', backspaceBtn);
 
     // 4. System keyboard toggle button (IME)
@@ -165,8 +179,7 @@ export class KeyboardMapHelper {
       e.stopPropagation();
       this.triggerKey('SystemIME');
     };
-    imeBtn.addEventListener('pointerdown', handleIme);
-    imeBtn.addEventListener('click', handleIme);
+    bindPress(imeBtn, handleIme);
 
     // 5. Hide / Collapse button
     const collapseBtn = document.createElement('button');
@@ -180,8 +193,7 @@ export class KeyboardMapHelper {
       e.stopPropagation();
       this.toggleCollapsed();
     };
-    collapseBtn.addEventListener('pointerdown', handleCollapse);
-    collapseBtn.addEventListener('click', handleCollapse);
+    bindPress(collapseBtn, handleCollapse);
 
     actionRow.appendChild(repeatBtn);
     actionRow.appendChild(spaceBtn);

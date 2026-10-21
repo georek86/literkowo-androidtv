@@ -59,3 +59,23 @@ Stan: **Wszystkie poprawki zostały wdrożone, przetestowane i zintegrowane w ga
 4. Workflow GitHub Actions `Build Android APK (Mobile & TV)` automatycznie kompiluje zaktualizowane pakiety i publikuje je na stronie wydań (GitHub Releases):
    - `literkowo.apk` / `literkowo-mobile.apk` (dla smartfonów i tabletów ze zaktualizowaną klawiaturą ekranową i poprawką dotyku),
    - `literkowo-tv.apk` (dla telewizorów z systemem Android TV).
+
+---
+
+## 3. Weryfikacja mobilna: klawiatura i skalowanie do rozdzielczości (październik 2026)
+
+Przeprowadzono testy w Chromium z emulacją dotyku dla 320×568, 390×844, 844×390, 1024×768 i 1440×900 (`npm run test:mobile`). Wykryte i naprawione problemy:
+
+1. **Detektor IME w Androidzie nigdy nie działał** — `rootView.getRootView().getHeight() - rootView.getHeight()` porównywał ten sam widok, więc różnica zawsze wynosiła 0. Zdarzenia `ime-show` / `ime-hide` nie były wysyłane. Detektor korzysta teraz z `WindowInsets.Type.ime()` (API 30+) lub z `getWindowVisibleDisplayFrame()` na starszych WebView.
+2. **Podwójne wykonanie akcji dotykiem** — przyciski miały jednocześnie `pointerdown` i `click`, przez co jedno dotknięcie literki, „Nakarm”, „Usuń” lub „✕ Schowaj” uruchamiało akcję dwa razy (zwijanie klawiatury toggle'owało się dwa razy i nic się nie zmieniało). Wprowadzono wspólny `bindPress()` (pointerdown + click tylko dla aktywacji klawiaturą).
+3. **Podwójne litery z klawiatury systemowej** — znak był obsługiwany w `keydown` i `input`. Litery są teraz obsługiwane wyłącznie przez `input`; `keydown` obsługuje tylko Spację, Backspace i Enter.
+4. **Klawiatura systemowa nie może się zamknąć** — obsługa `blur` wymuszała ponowne `focus()` pola IME. Usunięto automatyczne przywracanie fokusu; klawiatura zamyka się teraz normalnie, a `closeIme()` chowa ją przy pauzie, zakończeniu i powrocie do ekranu startowego.
+5. **Gboard zasłaniał grę zaraz po starcie** — `begin()` automatycznie wysuwał systemową klawiaturę na każdym urządzeniu dotykowym. Zgodnie z README klawiatura systemowa jest opcjonalna i otwiera się tylko po dotknięciu przycisku/pola IME.
+6. **Skalowanie do rzeczywistego widoku** — dodano `--app-height` aktualizowane z `visualViewport`/`resize` oraz `interactive-widget=resizes-content`. Wysokości `100vh`/`100svh` w trybie zabawy zastąpiono `var(--app-height, 100dvh)`, więc po wysunięciu klawiatury interfejs kurczy się zamiast chować pod nią.
+7. **Układ poziomy na telefonie trzymanym pionowo** — reguły `max-height: 600px` włączały układ dwukolumnowy również po otwarciu klawiatury w pionie. Dodano osobny układ `max-width: 620px and max-height: 600px` (kolumnowy) oraz stan `body.ime-open`, który ukrywa zbędną klawiaturę programową i pozostawia kartę zwierzątka.
+8. **Topbar i klawisze wychodziły poza ekran** — panele akcji miały stałą szerokość 420–446 px i powodowały poziome przewijanie na 320–390 px. Topbar zawija się, etykiety profilu/albumu są ukrywane na telefonach, a `#profile-name`/`#cards-label` nie rozpychają układu. Dodano bezpieczne marginesy `env(safe-area-inset-*)`.
+9. **Skalowanie tekstu w WebView** — dodano `setTextZoom(100)` oraz `text-size-adjust: 100%`, aby systemowa wielkość czcionki nie rozjeżdżała klawiatury i kafelków.
+10. **Notch / zaokrąglone ekrany** — dodano `windowLayoutInDisplayCutoutMode=shortEdges` (API 28+) i `viewport-fit=cover` z paddingami safe-area.
+
+Wynik: `npm test` — 64/64, `npm run test:mobile` — wszystkie 43 sprawdzenia zielone (brak poziomego przewijania, klawiatura i karta mieszczą się w widocznym obszarze, jedno dotknięcie = jedna akcja).
+
