@@ -116,6 +116,7 @@ let phase = 'welcome';
 const album = new AnimalAlbum();
 let currentAnimal = album.current;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 const hasKeyboardLock = Boolean(navigator.keyboard?.lock);
 
 // Touch-first devices start in a window without requiring keyboard protection.
@@ -1020,7 +1021,8 @@ async function begin(resuming = false) {
   startClock();
   startButton.disabled = false;
   resumeButton.disabled = false;
-  if (document.hidden || !document.hasFocus()) { pause(); return; }
+  // Android WebView often reports hasFocus() === false even while visible; trust only visibility on touch devices.
+  if (document.hidden || (!isTouchDevice && !document.hasFocus())) { pause(); return; }
   if (!resuming && soundCheckbox.checked && polishVoice && state.accept()) {
     if (quizEngine.mode === 'explore') speak(currentAnimal);
   }
@@ -1720,7 +1722,7 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) pause();
 });
-window.addEventListener('blur', () => { resetGaze(stageEl); cancelParentHold(); pause(); });
+window.addEventListener('blur', () => { resetGaze(stageEl); cancelParentHold(); if (!isTouchDevice) pause(); });
 window.addEventListener('pagehide', () => { clearTimeout(sessionTimer); clearInterval(clockTimer); cancelAnimationFrame(readinessFrame); cancelParentHold(); cancelSpeech(); releaseKeyboard(); state.stop(); });
 window.addEventListener('pageshow', event => {
   if (event.persisted && phase === 'playing') pause();
