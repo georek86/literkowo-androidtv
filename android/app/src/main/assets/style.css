@@ -517,3 +517,246 @@ select:focus, select:focus-visible {
   border: 1px solid #d9dfd0;
 }
 
+/* Profile and Night mode buttons in Topbar */
+#profile-btn, .profile-btn {
+  background: transparent;
+  border: 1px solid #daddcf;
+  border-radius: 30px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #5c685c;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+#night-btn, .night-btn {
+  background: transparent;
+  border: 1px solid #daddcf;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+#profile-btn:hover, #night-btn:hover {
+  background: #e9ecdf;
+}
+#profile-btn:focus-visible, #night-btn:focus-visible {
+  background: #e9ecdf;
+  outline: 3px solid #b37c46 !important;
+  outline-offset: 2px;
+}
+body.night-mode #profile-btn, body.night-mode #night-btn {
+  border-color: #3f5560;
+  color: #e6ebdd;
+}
+body.night-mode #profile-btn:hover, body.night-mode #profile-btn:focus-visible,
+body.night-mode #night-btn:hover, body.night-mode #night-btn:focus-visible {
+  background: #2b3e48;
+}
+
+/* Night Mode Theme */
+body.night-mode {
+  background: #17242a !important;
+  color: #e6ebdd !important;
+  --sage: #22343d !important;
+  --ink: #e6ebdd !important;
+  --muted: #95a396 !important;
+  --accent: #6f946d !important;
+}
+body.night-mode .animal-stage {
+  background: #22343d !important;
+}
+body.night-mode .mode-pill {
+  background: #203139 !important;
+  border-color: #354a54 !important;
+  color: #e6ebdd !important;
+}
+body.night-mode .mode-pill strong {
+  color: #e6ebdd !important;
+}
+body.night-mode .mode-pill.active {
+  background: #2a414b !important;
+  border-color: #6f946d !important;
+}
+body.night-mode dialog {
+  background: #1d2c33 !important;
+  color: #e6ebdd !important;
+  border-color: #354a54 !important;
+}
+body.night-mode dialog p, body.night-mode dialog small, body.night-mode .intro {
+  color: #a8b6aa !important;
+}
+body.night-mode .quiz-overlay {
+  background: rgba(34, 52, 61, 0.95) !important;
+}
+body.night-mode .quiz-prompt-text {
+  color: #e6ebdd !important;
+}
+body.night-mode .quiz-option-btn {
+  background: #263a43 !important;
+  border-color: #3e5663 !important;
+  color: #e6ebdd !important;
+}
+body.night-mode .spelling-slot {
+  background: #263a43 !important;
+  border-color: #3e5663 !important;
+  color: #e6ebdd !important;
+}
+body.night-mode .spelling-slot.filled {
+  background: #314d45 !important;
+  border-color: #6f946d !important;
+}
+body.night-mode .big-letter {
+  color: #8da482 !important;
+}
+body.night-mode .animal-label h2 {
+  color: #e6ebdd !important;
+}
+body.night-mode .card-item {
+  background: #263a43 !important;
+  border-color: #3a535f !important;
+}
+body.night-mode .card-title {
+  color: #e6ebdd !important;
+}
+
+/* Keyboard Map Visual Helper */
+.keyboard-map-container {
+  margin-top: 14px;
+  width: 95%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 2;
+  user-select: none;
+}
+.kb-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.kb-key {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  width: 27px;
+  height: 27px;
+  border-radius: 6px;
+  background: #fffdf8;
+  border: 1px solid #cad2c2;
+  color: #53634e;
+  display: grid;
+  place-items: center;
+  transition: all .15s ease;
+}
+body.night-mode .kb-key {
+  background: #2a3c45;
+  border-color: #3f5560;
+  color: #cdd9ce;
+}
+.kb-key.target-key {
+  background: #b37c46 !important;
+  color: #fff !important;
+  transform: scale(1.22);
+  box-shadow: 0 0 10px rgba(179, 124, 70, 0.7);
+  animation: kb-pulse 0.9s infinite alternate;
+}
+.kb-key.pressed-key {
+  background: #50694e !important;
+  color: #fff !important;
+  transform: scale(1.15);
+}
+@keyframes kb-pulse {
+  from { transform: scale(1.15); }
+  to { transform: scale(1.28); }
+}
+
+/* Memory Game Board & Cards */
+.memory-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: min(440px, 92%);
+  margin: 12px auto;
+}
+.memory-card {
+  aspect-ratio: 1 / 1.15;
+  border-radius: 16px;
+  background: #fffdf8;
+  border: 2.5px solid #cad5be;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease;
+  box-shadow: 0 4px 12px rgba(53, 76, 62, 0.08);
+  font-family: Georgia, serif;
+  font-size: 32px;
+  font-weight: bold;
+  color: #4c6649;
+}
+body.night-mode .memory-card {
+  background: #263a43;
+  border-color: #3e5663;
+  color: #e6ebdd;
+}
+.memory-card:hover, .memory-card:focus-visible {
+  transform: scale(1.06);
+  outline: 3px solid #b37c46 !important;
+  outline-offset: 3px;
+  border-color: #b37c46;
+}
+.memory-card.back {
+  background: #dfe6d6;
+  color: transparent;
+  border-color: #bcc9b2;
+}
+body.night-mode .memory-card.back {
+  background: #2d424c;
+  border-color: #3d5865;
+}
+.memory-card.back::after {
+  content: "✳";
+  font-size: 26px;
+  color: #87997a;
+}
+.memory-card.matched {
+  background: #d8ebd0 !important;
+  border-color: #50694e !important;
+  pointer-events: none;
+  opacity: 0.9;
+}
+body.night-mode .memory-card.matched {
+  background: #314d45 !important;
+  border-color: #6f946d !important;
+}
+.memory-thumb {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+}
+.memory-thumb svg {
+  width: 100%;
+  height: 100%;
+}
+.memory-label {
+  font-size: 11px;
+  margin-top: 2px;
+  color: #354c3e;
+  text-transform: capitalize;
+}
+body.night-mode .memory-label {
+  color: #e6ebdd;
+}
+
+

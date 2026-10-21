@@ -7,6 +7,8 @@ import { QuizEngine } from './quiz-engine.js';
 import { CollectionManager } from './collection.js';
 import { getFactForAnimal } from './animal-facts.js';
 import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, setSoundEnabled } from './sfx.js';
+import { KeyboardMapHelper } from './keyboard-map.js';
+import { MemoryGame } from './memory-game.js';
 
 const $ = id => document.getElementById(id);
 
@@ -73,8 +75,22 @@ const cardDetailCloseBtn = $('card-detail-close');
 const lettersMasteryGridEl = $('letters-mastery-grid');
 const resetStatsBtn = $('reset-stats-btn');
 
+// Profile, Night mode, Keyboard map and Memory board DOM references
+const profileBtn = $('profile-btn');
+const profileNameEl = $('profile-name');
+const nightBtn = $('night-btn');
+const memoryBoardEl = $('memory-board');
+const keyboardMapContainer = $('keyboard-map-container');
+const settingProfileSelect = $('setting-profile');
+const settingChildNameInput = $('setting-child-name');
+const settingPhonicsSelect = $('setting-phonics');
+const settingKeyboardHint = $('setting-keyboard-hint');
+const settingNightMode = $('setting-night-mode');
+
 const collection = new CollectionManager(animals);
 const quizEngine = new QuizEngine(animals);
+const keyboardHelper = new KeyboardMapHelper(keyboardMapContainer);
+const memoryGame = new MemoryGame();
 let selectedCardAnimal = null;
 
 const state = new PlayState();
@@ -273,6 +289,9 @@ function showAnimal(animal, animate = true) {
   renderAppearance();
   if (stageHintKbd) stageHintKbd.textContent = animal.inputKey.toUpperCase();
   if (stageHintSpan) stageHintSpan.textContent = `${animal.name} — spróbuj innego klawisza.`;
+  if (quizEngine.mode === 'explore') {
+    keyboardHelper.highlightTarget(animal.inputKey);
+  }
   animalContentEl.classList.remove('appearing', 'greeting');
   if (animate) {
     void animalContentEl.offsetWidth;
@@ -292,6 +311,7 @@ function discoverAnimal(key, event = {}) {
   if (phase !== 'playing') return;
   if (performance.now() >= endAt) { finish(); return; }
   if (!state.accept(event)) return;
+  keyboardHelper.flashPress(key);
   const animal = album.next(key);
   if (animal !== currentAnimal) showAnimal(animal);
   else greet();
@@ -300,8 +320,115 @@ function discoverAnimal(key, event = {}) {
 }
 
 function updateStarsBadge() {
-  if (starsCountEl) starsCountEl.textContent = collection.getStars();
+  const activeProfile = collection.getActiveProfile();
+  const displayName = activeProfile.childName ? activeProfile.childName : activeProfile.name;
+  if (profileNameEl) profileNameEl.textContent = displayName;
+  if (starsCountEl) starsCountEl.textContent = activeProfile.stars;
   if (cardsLabelEl) cardsLabelEl.textContent = `Album kart (${collection.getUnlockedCount()}/${collection.getTotalCardsCount()})`;
+}
+
+function applyNightMode(enabled) {
+  document.body.classList.toggle('night-mode', enabled);
+  if (nightBtn) nightBtn.textContent = enabled ? '☀️' : '🌙';
+  if (settingNightMode) settingNightMode.checked = enabled;
+  collection.setNightMode(enabled);
+}
+
+function switchProfile(profileId) {
+  collection.switchProfile(profileId);
+  quizEngine.setChildName(collection.getChildName());
+  updateStarsBadge();
+  if (settingProfileSelect) settingProfileSelect.value = profileId;
+  if (settingChildNameInput) settingChildNameInput.value = collection.getChildName();
+  const active = collection.getActiveProfile();
+  notice(`Przełączono profil: ${active.childName || active.name}`);
+}
+
+function setupMemoryBoard() {
+  if (!memoryBoardEl) return;
+  const cards = memoryGame.start(animals, 3);
+  memoryBoardEl.replaceChildren();
+  memoryBoardEl.hidden = false;
+  if (quizOptionsEl) quizOptionsEl.hidden = true;
+  if (spellingSlotsEl) spellingSlotsEl.hidden = true;
+  quizModeNameEl.textContent = 'PARY (MEMORY)';
+  quizPromptTextEl.textContent = 'Dopasuj pary liter i zwierzątek!';
+  stageCaptionEl.textContent = 'PARY (MEMORY)';
+  animalContentEl.hidden = true;
+  keyboardHelper.clearTarget();
+
+  cards.forEach((card, idx) => {
+    const cardBtn = document.createElement('button');
+    cardBtn.type = 'button';
+    cardBtn.className = 'memory-card back';
+    cardBtn.dataset.index = idx;
+    cardBtn.dataset.key = card.animal.key.toLowerCase();
+    cardBtn.dataset.letter = (card.kind === 'letter' ? card.label : card.animal.key).toLowerCase();
+    cardBtn.setAttribute('aria-label', `Karta ${idx + 1}`);
+
+    const renderFront = () => {
+      cardBtn.classList.remove('back');
+      if (card.kind === 'letter') {
+        cardBtn.innerHTML = `<span>${card.label}</span>`;
+      } else {
+        cardBtn.innerHTML = `<div class="memory-thumb">${illustration(card.animal, { scenery: false })}</div><span class="memory-label">${card.label}</span>`;
+      }
+    };
+
+    cardBtn.addEventListener('click', () => {
+      if (card.flipped || card.matched || memoryGame.isLocked) return;
+      renderFront();
+      playClick();
+      const res = memoryGame.flip(idx);
+      if (!res) return;
+
+      if (res.status === 'match') {
+        playCorrect();
+        speakText(`Brawo! ${res.animal.name}!`);
+        const idx1 = memoryGame.cards.findIndex(c => c.id === res.card1.id);
+        const idx2 = memoryGame.cards.findIndex(c => c.id === res.card2.id);
+        const matchedButtons = memoryBoardEl.querySelectorAll(`.memory-card[data-index="${idx1}"], .memory-card[data-index="${idx2}"]`);
+        matchedButtons.forEach(b => b.classList.add('matched'));
+
+        if (res.complete) {
+          setTimeout(() => {
+            playFanfare();
+            collection.addStar();
+            const { stars, unlockedAnimal } = collection.addStar();
+            updateStarsBadge();
+            if (quizCelebrationEl) quizCelebrationEl.hidden = false;
+            if (celebrationTextEl) celebrationTextEl.textContent = 'Wszystkie pary! ⭐ +2';
+            if (unlockedAnimal) {
+              setTimeout(() => {
+                notice(`🎉 Odblokowano nową kartę: ${unlockedAnimal.name}!`);
+              }, 400);
+            }
+            speakText('Wspaniale! Wszystkie pary dopasowane!', () => {
+              setTimeout(() => {
+                if (quizCelebrationEl) quizCelebrationEl.hidden = true;
+                if (phase === 'playing') setupMemoryBoard();
+              }, 1600);
+            });
+          }, 400);
+        }
+      } else if (res.status === 'mismatch') {
+        playTryAgain();
+        setTimeout(() => {
+          memoryGame.resolveMismatch();
+          const buttons = memoryBoardEl.querySelectorAll('.memory-card:not(.matched)');
+          buttons.forEach(b => {
+            b.classList.add('back');
+            b.innerHTML = '';
+          });
+        }, 850);
+      }
+    });
+
+    memoryBoardEl.appendChild(cardBtn);
+  });
+
+  speakText('Dopasuj pary liter i zwierzątek!');
+  setTimeout(() => memoryBoardEl.querySelector('.memory-card')?.focus(), 80);
 }
 
 function renderQuizOptions(options, targetChar) {
@@ -337,7 +464,15 @@ function setupQuizQuestion() {
   if (quizEngine.mode === 'explore') {
     if (quizOverlayEl) quizOverlayEl.hidden = true;
     if (animalContentEl) animalContentEl.hidden = false;
+    keyboardHelper.clearTarget();
     showAnimal(currentAnimal);
+    return;
+  }
+
+  if (quizEngine.mode === 'memory') {
+    if (quizCelebrationEl) quizCelebrationEl.hidden = true;
+    if (quizOverlayEl) quizOverlayEl.hidden = false;
+    setupMemoryBoard();
     return;
   }
 
@@ -346,6 +481,10 @@ function setupQuizQuestion() {
 
   if (quizCelebrationEl) quizCelebrationEl.hidden = true;
   if (quizOverlayEl) quizOverlayEl.hidden = false;
+  if (memoryBoardEl) memoryBoardEl.hidden = true;
+  animalContentEl.hidden = false;
+
+  keyboardHelper.highlightTarget(q.targetChar || (q.letters && q.letters[q.stepIndex]));
 
   if (q.type === 'guess-letter') {
     quizModeNameEl.textContent = 'ZGADNIJ LITERKĘ';
@@ -383,6 +522,8 @@ function handleQuizInput(key) {
   if (phase !== 'playing' || quizEngine.mode === 'explore') return;
   if (!quizEngine.currentQuestion) return;
 
+  keyboardHelper.flashPress(key);
+
   const res = quizEngine.checkInput(key);
   if (!res) return;
 
@@ -416,6 +557,8 @@ function handleQuizInput(key) {
       // Intermediate spelling step
       playCorrect();
       renderSpellingSlots(quizEngine.currentQuestion);
+      const nextChar = quizEngine.currentQuestion.letters?.[quizEngine.currentQuestion.stepIndex];
+      keyboardHelper.highlightTarget(nextChar);
       speakText(res.speech);
     }
   } else {
@@ -733,6 +876,8 @@ function returnToWelcome() {
   stageEl.hidden = false;
   if (quizOverlayEl) quizOverlayEl.hidden = true;
   if (quizCelebrationEl) quizCelebrationEl.hidden = true;
+  if (memoryBoardEl) memoryBoardEl.hidden = true;
+  keyboardHelper.clearTarget();
   if (animalContentEl) animalContentEl.hidden = false;
   if (stageHintEl) stageHintEl.hidden = false;
   stageCaptionEl.textContent = 'POZNAJMY SIĘ';
@@ -744,13 +889,54 @@ function returnToWelcome() {
   startButton.focus();
 }
 
+function openSettings() {
+  if (settingProfileSelect) settingProfileSelect.value = collection.getActiveProfileId();
+  if (settingChildNameInput) settingChildNameInput.value = collection.getChildName();
+  if (settingPhonicsSelect) settingPhonicsSelect.value = collection.getPhonicsMode();
+  if (settingKeyboardHint) settingKeyboardHint.checked = collection.isKeyboardHint();
+  if (settingNightMode) settingNightMode.checked = collection.isNightMode();
+  renderMasteryGrid();
+  settingsDialog.showModal();
+  (settingProfileSelect || settingSceneryCheckbox)?.focus();
+}
+
 $('settings-done').addEventListener('click', () => settingsDialog.close());
 parentButton.addEventListener('click', () => {
-  if (phase === 'welcome') {
-    renderMasteryGrid();
-    settingsDialog.showModal();
-    settingSceneryCheckbox.focus();
-  }
+  if (phase === 'welcome') openSettings();
+});
+
+profileBtn?.addEventListener('click', () => {
+  const currentId = collection.getActiveProfileId();
+  const nextId = currentId === 'profile_1' ? 'profile_2' : 'profile_1';
+  switchProfile(nextId);
+});
+
+nightBtn?.addEventListener('click', () => {
+  applyNightMode(!collection.isNightMode());
+});
+
+settingProfileSelect?.addEventListener('change', () => {
+  switchProfile(settingProfileSelect.value);
+});
+
+settingChildNameInput?.addEventListener('input', () => {
+  collection.setChildName(settingChildNameInput.value);
+  quizEngine.setChildName(settingChildNameInput.value);
+  updateStarsBadge();
+});
+
+settingPhonicsSelect?.addEventListener('change', () => {
+  collection.setPhonicsMode(settingPhonicsSelect.value);
+  quizEngine.setPhonicsMode(settingPhonicsSelect.value);
+});
+
+settingKeyboardHint?.addEventListener('change', () => {
+  collection.setKeyboardHint(settingKeyboardHint.checked);
+  keyboardHelper.setEnabled(settingKeyboardHint.checked);
+});
+
+settingNightMode?.addEventListener('change', () => {
+  applyNightMode(settingNightMode.checked);
 });
 
 cardsButton?.addEventListener('click', openCardsAlbum);
@@ -942,11 +1128,56 @@ window.addEventListener('keydown', event => {
       }
       const settingControls = [
         settingsDialog.querySelector('.close-button'),
+        settingProfileSelect,
+        settingChildNameInput,
+        settingPhonicsSelect,
+        settingKeyboardHint,
+        settingNightMode,
         settingSceneryCheckbox,
         durationSelect,
         resetStatsBtn,
         $('settings-done')
       ].filter(Boolean);
+
+      if (document.activeElement === settingChildNameInput) {
+        if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey) || event.key === 'Enter') {
+          event.preventDefault();
+          settingPhonicsSelect?.focus();
+          return;
+        }
+        if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
+          event.preventDefault();
+          settingProfileSelect?.focus();
+          return;
+        }
+        return;
+      }
+
+      if (document.activeElement === settingProfileSelect || document.activeElement === settingPhonicsSelect) {
+        const sel = document.activeElement;
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          if (sel.selectedIndex < sel.options.length - 1) sel.selectedIndex++;
+          else sel.selectedIndex = 0;
+          sel.dispatchEvent(new Event('change'));
+          return;
+        }
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          if (sel.selectedIndex > 0) sel.selectedIndex--;
+          else sel.selectedIndex = sel.options.length - 1;
+          sel.dispatchEvent(new Event('change'));
+          return;
+        }
+      }
+
+      if ([settingKeyboardHint, settingNightMode, settingSceneryCheckbox].includes(document.activeElement) && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        document.activeElement.checked = !document.activeElement.checked;
+        document.activeElement.dispatchEvent(new Event('change'));
+        return;
+      }
+
       if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
         event.preventDefault();
         const idx = settingControls.indexOf(document.activeElement);
@@ -961,21 +1192,15 @@ window.addEventListener('keydown', event => {
         prev?.focus();
         return;
       }
-      if (document.activeElement === settingSceneryCheckbox && (event.key === 'Enter' || event.key === ' ')) {
-        event.preventDefault();
-        settingSceneryCheckbox.checked = !settingSceneryCheckbox.checked;
-        settingSceneryCheckbox.dispatchEvent(new Event('change'));
-        return;
-      }
       if (document.activeElement === durationSelect) {
-        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        if (event.key === 'ArrowRight') {
           event.preventDefault();
           if (durationSelect.selectedIndex < durationSelect.options.length - 1) durationSelect.selectedIndex++;
           else durationSelect.selectedIndex = 0;
           durationSelect.dispatchEvent(new Event('change'));
           return;
         }
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        if (event.key === 'ArrowLeft') {
           event.preventDefault();
           if (durationSelect.selectedIndex > 0) durationSelect.selectedIndex--;
           else durationSelect.selectedIndex = durationSelect.options.length - 1;
@@ -1012,7 +1237,7 @@ window.addEventListener('keydown', event => {
       }
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        if (idx < 2 && idx + 2 < modePills.length) modePills[idx + 2]?.focus();
+        if (idx + 2 < modePills.length) modePills[idx + 2]?.focus();
         else startButton?.focus();
         return;
       }
@@ -1031,12 +1256,21 @@ window.addEventListener('keydown', event => {
 
     if (event.key === 'p' || event.key === 'P' || event.key === 'F1') {
       event.preventDefault();
-      settingsDialog.showModal();
-      settingSceneryCheckbox.focus();
+      openSettings();
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
       if (document.activeElement === startButton) {
+        return;
+      }
+      if (document.activeElement === profileBtn) {
+        event.preventDefault();
+        profileBtn.click();
+        return;
+      }
+      if (document.activeElement === nightBtn) {
+        event.preventDefault();
+        nightBtn.click();
         return;
       }
       if (['sound', 'fullscreen', 'scenery'].includes(document.activeElement?.id)) {
@@ -1052,9 +1286,7 @@ window.addEventListener('keydown', event => {
       }
       if (document.activeElement === parentButton) {
         event.preventDefault();
-        renderMasteryGrid();
-        settingsDialog.showModal();
-        settingSceneryCheckbox.focus();
+        openSettings();
         return;
       }
       if (!['BUTTON', 'A', 'INPUT', 'SELECT'].includes(document.activeElement?.tagName)) {
@@ -1067,7 +1299,7 @@ window.addEventListener('keydown', event => {
       if (event.key === 'ArrowDown') { event.preventDefault(); soundCheckbox.focus(); return; }
       if (event.key === 'ArrowUp') {
         event.preventDefault();
-        const activePill = modeSelector?.querySelector('.mode-pill.active') || modePills[2] || modePills[0];
+        const activePill = modeSelector?.querySelector('.mode-pill.active') || modePills[modePills.length - 1] || modePills[0];
         activePill?.focus();
         return;
       }
@@ -1084,15 +1316,23 @@ window.addEventListener('keydown', event => {
       if (event.key === 'ArrowLeft') { event.preventDefault(); fullscreenCheckbox.focus(); return; }
       if (event.key === 'ArrowUp') { event.preventDefault(); startButton.focus(); return; }
       if (event.key === 'ArrowDown') { event.preventDefault(); document.querySelector('.footer-links a')?.focus(); return; }
+    } else if (document.activeElement === profileBtn) {
+      if (event.key === 'ArrowRight') { event.preventDefault(); nightBtn?.focus(); return; }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); document.querySelector('.brand')?.focus(); return; }
+      if (event.key === 'ArrowDown') { event.preventDefault(); modePills[0]?.focus(); return; }
+    } else if (document.activeElement === nightBtn) {
+      if (event.key === 'ArrowRight') { event.preventDefault(); cardsButton?.focus(); return; }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); profileBtn?.focus(); return; }
+      if (event.key === 'ArrowDown') { event.preventDefault(); modePills[0]?.focus(); return; }
     } else if (document.activeElement === cardsButton) {
       if (event.key === 'ArrowRight') { event.preventDefault(); parentButton.focus(); return; }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); document.querySelector('.brand')?.focus(); return; }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); nightBtn?.focus() || profileBtn?.focus() || document.querySelector('.brand')?.focus(); return; }
       if (event.key === 'ArrowDown') { event.preventDefault(); modePills[0]?.focus(); return; }
     } else if (document.activeElement === parentButton) {
       if (event.key === 'ArrowDown') { event.preventDefault(); modePills[1]?.focus() || startButton.focus(); return; }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); cardsButton?.focus() || document.querySelector('.brand')?.focus(); return; }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); cardsButton?.focus(); return; }
     } else if (document.activeElement?.matches?.('.brand')) {
-      if (event.key === 'ArrowRight') { event.preventDefault(); cardsButton?.focus() || parentButton.focus(); return; }
+      if (event.key === 'ArrowRight') { event.preventDefault(); profileBtn?.focus() || nightBtn?.focus() || cardsButton?.focus() || parentButton.focus(); return; }
       if (event.key === 'ArrowDown') { event.preventDefault(); modePills[0]?.focus() || startButton.focus(); return; }
     } else if (document.activeElement?.matches?.('.footer-links a')) {
       if (event.key === 'ArrowUp') { event.preventDefault(); sceneryCheckbox.focus(); return; }
@@ -1113,6 +1353,52 @@ window.addEventListener('keydown', event => {
     if (!holdKey) {
       holdKey = event.key;
       triggerHoldAnimation(pause);
+    }
+    return;
+  }
+  if (quizEngine.mode === 'memory') {
+    const memoryCards = Array.from(memoryBoardEl?.querySelectorAll('.memory-card') || []);
+    if (event.key === 'ArrowRight') {
+      const idx = memoryCards.indexOf(document.activeElement);
+      const nextIdx = idx >= 0 ? (idx + 1) % memoryCards.length : 0;
+      memoryCards[nextIdx]?.focus();
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      const idx = memoryCards.indexOf(document.activeElement);
+      const prevIdx = idx >= 0 ? (idx - 1 + memoryCards.length) % memoryCards.length : memoryCards.length - 1;
+      memoryCards[prevIdx]?.focus();
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      const idx = memoryCards.indexOf(document.activeElement);
+      const nextIdx = idx >= 0 ? (idx + 3) % memoryCards.length : 0;
+      memoryCards[nextIdx]?.focus();
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      const idx = memoryCards.indexOf(document.activeElement);
+      const prevIdx = idx >= 0 ? (idx - 3 + memoryCards.length) % memoryCards.length : 0;
+      memoryCards[prevIdx]?.focus();
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      if (memoryCards.includes(document.activeElement)) {
+        document.activeElement.click();
+      } else if (memoryCards.length > 0) {
+        memoryCards[0]?.click();
+      }
+      return;
+    }
+    if (isAnimalInput(event)) {
+      keyboardHelper.flashPress(event.key);
+      const normKey = event.key.toLowerCase();
+      const faceDownCard = memoryCards.find(c => c.classList.contains('back') && (c.dataset.letter === normKey || c.dataset.key === normKey));
+      if (faceDownCard) {
+        faceDownCard.focus();
+        faceDownCard.click();
+      }
+      return;
     }
     return;
   }
@@ -1163,6 +1449,18 @@ window.addEventListener('pagehide', () => { clearTimeout(sessionTimer); clearInt
 window.addEventListener('pageshow', event => {
   if (event.persisted && phase === 'playing') pause();
 });
+
+applyNightMode(collection.isNightMode());
+keyboardHelper.setEnabled(collection.isKeyboardHint());
+quizEngine.setPhonicsMode(collection.getPhonicsMode());
+quizEngine.setChildName(collection.getChildName());
+
+if (settingProfileSelect) settingProfileSelect.value = collection.getActiveProfileId();
+if (settingChildNameInput) settingChildNameInput.value = collection.getChildName();
+if (settingPhonicsSelect) settingPhonicsSelect.value = collection.getPhonicsMode();
+if (settingKeyboardHint) settingKeyboardHint.checked = collection.isKeyboardHint();
+if (settingNightMode) settingNightMode.checked = collection.isNightMode();
+
 updateStarsBadge();
 showAnimal(currentAnimal, false);
 setTimeout(() => startButton?.focus(), 50);

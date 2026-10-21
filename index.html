@@ -19,6 +19,10 @@
     <a class="brand" href="./" aria-label="Literkowo — strona główna"><span class="brand-mark">l<span>•</span></span>literkowo<span class="brand-dot">.</span></a>
     <span class="tagline">małe odkrycia, bez pośpiechu</span>
     <div class="topbar-actions">
+      <button class="profile-btn" id="profile-btn" type="button" aria-label="Zmień gracza" title="Przełącz gracza (rodzeństwo)">
+        <span class="profile-icon">👦</span> <span id="profile-name">Gracz 1</span>
+      </button>
+      <button class="night-btn" id="night-btn" type="button" aria-label="Włącz tryb wieczorny" title="Przełącz tryb wieczorny">🌙</button>
       <div class="stars-badge" id="stars-badge" aria-label="Zdobyte gwiazdki" title="Zdobyte gwiazdki">
         <span class="star-icon" aria-hidden="true">⭐</span> <span id="stars-count">0</span>
       </div>
@@ -53,6 +57,10 @@
             <span class="mode-icon">✏️</span>
             <span class="mode-text"><strong>Napisz słowo</strong><small>Literowanie prostych słów</small></span>
           </button>
+          <button type="button" class="mode-pill" data-mode="memory" role="radio" aria-checked="false">
+            <span class="mode-icon">🎴</span>
+            <span class="mode-text"><strong>Pary (Memory)</strong><small>Dopasuj literę i zwierzę</small></span>
+          </button>
         </div>
       </div>
       <button class="primary-button" id="start" type="button" autofocus>Zaczynamy <span aria-hidden="true">↗</span></button>
@@ -82,11 +90,13 @@
         </div>
         <div class="quiz-options" id="quiz-options" role="group" aria-label="Opcje odpowiedzi"></div>
         <div class="spelling-slots" id="spelling-slots" aria-label="Litery słowa" hidden></div>
+        <div class="memory-board" id="memory-board" role="grid" aria-label="Plansza memory" hidden></div>
       </div>
       <div class="quiz-celebration" id="quiz-celebration" hidden>
         <div class="celebration-star" aria-hidden="true">⭐</div>
         <span class="celebration-text" id="celebration-text">Brawo!</span>
       </div>
+      <div class="keyboard-map-container" id="keyboard-map-container" aria-hidden="true"></div>
       <div class="readiness" id="readiness" role="progressbar" aria-label="Gotowość na kolejne zwierzątko" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" hidden>
         <svg viewBox="0 0 28 28" aria-hidden="true"><circle class="readiness-track" cx="14" cy="14" r="10"/><circle class="readiness-fill" id="readiness-fill" cx="14" cy="14" r="10" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg>
         <span id="readiness-label">Można dalej</span>
@@ -128,6 +138,11 @@
     <span class="eyebrow">CHWILA DLA WAS</span><h2 id="settings-title">Dla rodzica</h2>
     <p class="dialog-intro">Interaktywna zabawa rodzica lub opiekuna z dzieckiem. Korzystajcie wyłącznie razem, pod stałym nadzorem dorosłego.</p>
     <div class="setting-info"><strong>Małe odkrycia dotykiem i klawiaturą</strong><p>Każda zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i klawisze bez przypisanej litery losują z całego albumu. Litera losuje wśród pasujących nazw, np. N: nosorożec, niedźwiedź lub nietoperz. Pierwszeństwo mają zwierzątka jeszcze niewidziane w tej zabawie — również po zmianie klawisza lub użyciu dotyku. Gdy wszystkie pasujące zwierzątka zostały już pokazane, wracają w tasowanej kolejności, bez powtórzeń jedno po drugim, jeśli jest wybór. Pod E, I i U jest po jednym zwierzątku — kolejne naciśnięcie ponownie je wita. Nie trzeba używać AltGr: C obejmuje też Ć, L — Ł, S — Ś, a Z — Ź i Ż. Pełne kółko oznacza gotowość do kolejnego odkrycia; szybkie stuknięcia, dodatkowe palce i przytrzymane klawisze są pomijane.</p></div>
+    <label class="setting-row" for="setting-profile"><span>Aktywny gracz (Profil rodzeństwa)<small>Osobne gwiazdki, imię i album dla każdego dziecka.</small></span><select id="setting-profile"><option value="profile_1">Gracz 1</option><option value="profile_2">Gracz 2</option></select></label>
+    <label class="setting-row" for="setting-child-name"><span>Imię dziecka<small>Wpisz imię, aby pojawiało się w zadaniach literowania (np. ZOSIA, STAŚ).</small></span><input id="setting-child-name" type="text" placeholder="Imię..." maxlength="12" style="border:1px solid #cad4bd;border-radius:9px;padding:8px 12px;font:inherit;background:#f4f5eb;width:120px;"></label>
+    <label class="setting-row" for="setting-phonics"><span>Wymowa liter (Metoda czytania)<small>Głoski (b, k, m) ułatwiają naukę czytania. Alfabet (be, ka, em) uczy nazw liter.</small></span><select id="setting-phonics"><option value="alphabet">Nazwy liter (alfabet)</option><option value="phonics">Głoski (nauka czytania)</option></select></label>
+    <label class="setting-row" for="setting-keyboard-hint"><span>Pomoc klawiatury na ekranie<small>Podświetla szukany klawisz na schemacie klawiatury.</small></span><input id="setting-keyboard-hint" type="checkbox" checked></label>
+    <label class="setting-row" for="setting-night-mode"><span>Tryb wieczorny<small>Ciemniejsze, ciepłe barwy nie męczące wzroku wieczorem.</small></span><input id="setting-night-mode" type="checkbox"></label>
     <label class="setting-row" for="setting-scenery"><span>Zmienna sceneria<small>Dopasowane otoczenie zwierzątka, np. las lub sawanna. Wyłącz, aby pokazywać jednolite tło.</small></span><input id="setting-scenery" type="checkbox" checked></label>
     <label class="setting-row" for="duration"><span>Czas jednej zabawy<small>Po tym czasie zwierzątka odpoczną.</small></span><select id="duration"><option value="2">2 minuty</option><option value="3" selected>3 minuty</option><option value="5">5 minut</option></select></label>
     <div class="setting-info"><strong>Klawiatura i pełny ekran</strong><p id="lock-status">Gdy wybierzesz „Pełny ekran i blokada”, gra wystartuje dopiero po włączeniu obu funkcji.</p><p>Gra prosi przeglądarkę o przechwycenie wszystkich dostępnych jej klawiszy. Windows/Super, Alt+Tab i inne skróty mogą jednak pozostać zarezerwowane przez system. Ich dodatkowa blokada wymaga ustawień systemowych. Sam pełny ekran ani F11 jej nie zapewniają.</p><p>W Chrome przytrzymaj Esc przez około 2 sekundy, aby wyjść z pełnego ekranu. Możesz też przytrzymać przycisk rodzica. Przycisku zasilania strona nie blokuje.</p></div>
