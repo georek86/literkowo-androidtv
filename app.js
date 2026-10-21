@@ -6,9 +6,12 @@ import { acquireKeyboardProtection } from './keyboard-protection.js';
 import { QuizEngine } from './quiz-engine.js';
 import { CollectionManager } from './collection.js';
 import { getFactForAnimal } from './animal-facts.js';
-import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, setSoundEnabled } from './sfx.js';
+import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, playMunch, playMagicReveal, setSoundEnabled } from './sfx.js';
 import { KeyboardMapHelper } from './keyboard-map.js';
 import { MemoryGame } from './memory-game.js';
+import { hasAnimalSound, playAnimalSound } from './animal-sounds.js';
+import { getFoodForAnimal } from './animal-feed.js';
+import { getSyllablesForAnimal } from './syllables.js';
 
 const $ = id => document.getElementById(id);
 
@@ -58,6 +61,10 @@ const quizModeNameEl = $('quiz-mode-name');
 const quizPromptTextEl = $('quiz-prompt-text');
 const quizOptionsEl = $('quiz-options');
 const spellingSlotsEl = $('spelling-slots');
+const syllablesSlotsEl = $('syllables-slots');
+const soundReplayBtn = $('sound-replay-btn');
+const feedBtn = $('feed-btn');
+const feedParticleContainer = $('feed-particle-container');
 const quizCelebrationEl = $('quiz-celebration');
 const celebrationTextEl = $('celebration-text');
 const cardsDialog = $('cards-dialog');
@@ -313,10 +320,52 @@ function discoverAnimal(key, event = {}) {
   if (!state.accept(event)) return;
   keyboardHelper.flashPress(key);
   const animal = album.next(key);
-  if (animal !== currentAnimal) showAnimal(animal);
-  else greet();
+  if (animal !== currentAnimal) {
+    showAnimal(animal);
+    if (hasAnimalSound(animal)) {
+      setTimeout(() => playAnimalSound(animal), 550);
+    }
+  } else {
+    greet();
+    if (hasAnimalSound(animal)) {
+      playAnimalSound(animal);
+    }
+  }
   speak(animal);
   updateReadiness();
+}
+
+function feedCurrentAnimal() {
+  if (phase !== 'playing' || !currentAnimal) return;
+  const food = getFoodForAnimal(currentAnimal);
+  if (!food) return;
+
+  playMunch();
+
+  if (feedParticleContainer) {
+    const foodEl = document.createElement('div');
+    foodEl.className = 'flying-food';
+    foodEl.innerHTML = food.svg;
+    feedParticleContainer.appendChild(foodEl);
+    setTimeout(() => foodEl.remove(), 780);
+
+    setTimeout(() => {
+      const heartEl = document.createElement('div');
+      heartEl.className = 'floating-heart';
+      heartEl.textContent = '❤️';
+      feedParticleContainer.appendChild(heartEl);
+      setTimeout(() => heartEl.remove(), 950);
+    }, 380);
+  }
+
+  if (animalContentEl) {
+    animalContentEl.classList.remove('eating');
+    void animalContentEl.offsetWidth;
+    animalContentEl.classList.add('eating');
+    setTimeout(() => animalContentEl?.classList.remove('eating'), 520);
+  }
+
+  speakText(food.speech);
 }
 
 function updateStarsBadge() {
@@ -460,10 +509,40 @@ function renderSpellingSlots(question) {
   }
 }
 
+function renderSyllablesSlots(question) {
+  if (!syllablesSlotsEl) return;
+  syllablesSlotsEl.replaceChildren();
+  for (let i = 0; i < question.syllables.length; i++) {
+    const isFilled = i < question.stepIndex;
+    const isCurrent = i === question.stepIndex;
+    const slot = document.createElement('div');
+    slot.className = `syllable-slot ${isFilled ? 'filled' : ''} ${isCurrent ? 'active-slot' : ''}`;
+    slot.textContent = isFilled ? question.syllables[i] : (isCurrent ? question.syllables[i] : '___');
+    syllablesSlotsEl.appendChild(slot);
+  }
+}
+
+function renderSyllableOptions(options, targetSyllable) {
+  if (!quizOptionsEl) return;
+  quizOptionsEl.replaceChildren();
+  for (const opt of options) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quiz-option-btn';
+    btn.dataset.letter = opt;
+    btn.textContent = opt;
+    btn.setAttribute('aria-label', `Wybierz sylabę ${opt}`);
+    btn.addEventListener('click', () => handleQuizInput(opt));
+    quizOptionsEl.appendChild(btn);
+  }
+  setTimeout(() => quizOptionsEl.querySelector('.quiz-option-btn')?.focus(), 80);
+}
+
 function setupQuizQuestion() {
   if (quizEngine.mode === 'explore') {
     if (quizOverlayEl) quizOverlayEl.hidden = true;
     if (animalContentEl) animalContentEl.hidden = false;
+    illustrationEl.classList.remove('shadow-silhouette', 'shadow-reveal');
     keyboardHelper.clearTarget();
     showAnimal(currentAnimal);
     return;
@@ -472,6 +551,7 @@ function setupQuizQuestion() {
   if (quizEngine.mode === 'memory') {
     if (quizCelebrationEl) quizCelebrationEl.hidden = true;
     if (quizOverlayEl) quizOverlayEl.hidden = false;
+    illustrationEl.classList.remove('shadow-silhouette', 'shadow-reveal');
     setupMemoryBoard();
     return;
   }
@@ -482,9 +562,12 @@ function setupQuizQuestion() {
   if (quizCelebrationEl) quizCelebrationEl.hidden = true;
   if (quizOverlayEl) quizOverlayEl.hidden = false;
   if (memoryBoardEl) memoryBoardEl.hidden = true;
+  if (soundReplayBtn) soundReplayBtn.hidden = true;
+  if (syllablesSlotsEl) syllablesSlotsEl.hidden = true;
+  illustrationEl.classList.remove('shadow-silhouette', 'shadow-reveal');
   animalContentEl.hidden = false;
 
-  keyboardHelper.highlightTarget(q.targetChar || (q.letters && q.letters[q.stepIndex]));
+  keyboardHelper.highlightTarget(q.targetChar || (q.letters && q.letters[q.stepIndex]) || (q.targetSyllable && q.targetSyllable[0]));
 
   if (q.type === 'guess-letter') {
     quizModeNameEl.textContent = 'ZGADNIJ LITERKĘ';
@@ -505,6 +588,44 @@ function setupQuizQuestion() {
     renderQuizOptions(q.options, q.targetChar);
     showAnimal(q.animal);
     stageCaptionEl.textContent = 'PIERWSZA LITERA';
+    speakText(q.speech);
+  } else if (q.type === 'shadow') {
+    quizModeNameEl.textContent = 'KTO SIĘ SCHOWAŁ?';
+    quizPromptTextEl.textContent = q.prompt;
+    spellingSlotsEl.hidden = true;
+    quizOptionsEl.hidden = false;
+    renderQuizOptions(q.options, q.targetChar);
+    showAnimal(q.animal);
+    illustrationEl.classList.add('shadow-silhouette');
+    letterEl.replaceChildren(document.createTextNode('?'));
+    animalNameEl.textContent = '???';
+    stageCaptionEl.textContent = 'KTO SIĘ SCHOWAŁ?';
+    speakText(q.speech);
+  } else if (q.type === 'sound') {
+    quizModeNameEl.textContent = 'DŹWIĘKI ZWIERZĄT';
+    quizPromptTextEl.textContent = q.prompt;
+    spellingSlotsEl.hidden = true;
+    quizOptionsEl.hidden = false;
+    if (soundReplayBtn) soundReplayBtn.hidden = false;
+    renderQuizOptions(q.options, q.targetChar);
+    letterEl.replaceChildren(document.createTextNode('?'));
+    illustrationEl.innerHTML = '<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="70" fill="#e2ecd8"/><text x="100" y="125" font-size="70" text-anchor="middle">🔊</text></svg>';
+    animalNameEl.textContent = 'Posłuchaj odgłosu';
+    stageCaptionEl.textContent = 'DŹWIĘKI ZWIERZĄT';
+    playAnimalSound(q.animal);
+    speakText(q.speech, () => {
+      setTimeout(() => playAnimalSound(q.animal), 300);
+    });
+  } else if (q.type === 'syllables') {
+    quizModeNameEl.textContent = 'SYLABY';
+    quizPromptTextEl.textContent = q.prompt;
+    spellingSlotsEl.hidden = true;
+    syllablesSlotsEl.hidden = false;
+    quizOptionsEl.hidden = false;
+    renderSyllablesSlots(q);
+    renderSyllableOptions(q.options, q.targetSyllable);
+    showAnimal(q.animal);
+    stageCaptionEl.textContent = 'SYLABY';
     speakText(q.speech);
   } else if (q.type === 'spelling') {
     quizModeNameEl.textContent = 'NAPISZ SŁOWO';
@@ -529,7 +650,17 @@ function handleQuizInput(key) {
 
   if (res.correct) {
     if (res.finished) {
-      playCorrect();
+      if (quizEngine.mode === 'shadow') {
+        illustrationEl.classList.remove('shadow-silhouette');
+        illustrationEl.classList.add('shadow-reveal');
+        playMagicReveal();
+      } else if (quizEngine.mode === 'sound') {
+        playAnimalSound(res.animal);
+        playCorrect();
+      } else {
+        playCorrect();
+      }
+
       collection.recordAnswer(res.animal.key, true);
       const { stars, unlockedAnimal } = collection.addStar();
       updateStarsBadge();
@@ -553,6 +684,12 @@ function handleQuizInput(key) {
           if (phase === 'playing') setupQuizQuestion();
         }, 1300);
       });
+    } else if (quizEngine.mode === 'syllables') {
+      playCorrect();
+      renderSyllablesSlots(quizEngine.currentQuestion);
+      renderSyllableOptions(quizEngine.currentQuestion.options, quizEngine.currentQuestion.targetSyllable);
+      keyboardHelper.highlightTarget(quizEngine.currentQuestion.targetSyllable[0]);
+      speakText(res.speech);
     } else {
       // Intermediate spelling step
       playCorrect();
@@ -877,6 +1014,9 @@ function returnToWelcome() {
   if (quizOverlayEl) quizOverlayEl.hidden = true;
   if (quizCelebrationEl) quizCelebrationEl.hidden = true;
   if (memoryBoardEl) memoryBoardEl.hidden = true;
+  if (syllablesSlotsEl) syllablesSlotsEl.hidden = true;
+  if (soundReplayBtn) soundReplayBtn.hidden = true;
+  illustrationEl.classList.remove('shadow-silhouette', 'shadow-reveal');
   keyboardHelper.clearTarget();
   if (animalContentEl) animalContentEl.hidden = false;
   if (stageHintEl) stageHintEl.hidden = false;
@@ -888,6 +1028,13 @@ function returnToWelcome() {
   updateStarsBadge();
   startButton.focus();
 }
+
+feedBtn?.addEventListener('click', feedCurrentAnimal);
+soundReplayBtn?.addEventListener('click', () => {
+  if (quizEngine.currentQuestion?.animal) {
+    playAnimalSound(quizEngine.currentQuestion.animal);
+  }
+});
 
 function openSettings() {
   if (settingProfileSelect) settingProfileSelect.value = collection.getActiveProfileId();
@@ -1353,6 +1500,16 @@ window.addEventListener('keydown', event => {
     if (!holdKey) {
       holdKey = event.key;
       triggerHoldAnimation(pause);
+    }
+    return;
+  }
+  if (event.key === ' ' && quizEngine.mode === 'explore') {
+    feedCurrentAnimal();
+    return;
+  }
+  if ((event.key === 'r' || event.key === 'R') && quizEngine.mode === 'sound') {
+    if (quizEngine.currentQuestion?.animal) {
+      playAnimalSound(quizEngine.currentQuestion.animal);
     }
     return;
   }

@@ -759,4 +759,170 @@ body.night-mode .memory-label {
   color: #e6ebdd;
 }
 
+/* Shadow Silhouette Mode ("Kto się schował?") */
+.illustration.shadow-silhouette svg {
+  filter: brightness(0) drop-shadow(0 0 12px rgba(25, 40, 35, 0.45));
+  transition: filter 0.6s ease;
+}
+.illustration.shadow-reveal svg {
+  filter: none !important;
+  animation: reveal-pop 0.65s ease-out;
+}
+@keyframes reveal-pop {
+  0% { filter: brightness(2.2) contrast(1.5); transform: scale(0.92); }
+  50% { transform: scale(1.12); }
+  100% { filter: none; transform: scale(1); }
+}
+
+/* Syllables Mode ("Sylaby") */
+.syllables-slots {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin: 14px auto;
+  flex-wrap: wrap;
+}
+.syllable-slot {
+  background: #fffdf8;
+  border: 2.5px solid #cad5be;
+  border-radius: 14px;
+  min-width: 75px;
+  padding: 10px 20px;
+  font-family: Georgia, serif;
+  font-size: 32px;
+  font-weight: bold;
+  color: #4b6348;
+  text-align: center;
+  transition: all .2s ease;
+  box-shadow: 0 4px 10px rgba(53, 76, 62, 0.06);
+}
+body.night-mode .syllable-slot {
+  background: #263a43;
+  border-color: #3e5663;
+  color: #e6ebdd;
+}
+.syllable-slot.filled {
+  background: #e1eedb;
+  border-color: #50694e;
+  color: #274724;
+}
+body.night-mode .syllable-slot.filled {
+  background: #314d45;
+  border-color: #6f946d;
+  color: #e6ebdd;
+}
+.syllable-slot.active-slot {
+  border-color: #b37c46;
+  outline: 3px solid #b37c46;
+  animation: kb-pulse 0.9s infinite alternate;
+}
+
+/* Sound Quiz Mode Replay Button */
+.sound-replay-btn {
+  background: #eef3e6;
+  border: 1.5px solid #a3b897;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #385135;
+  cursor: pointer;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .2s ease;
+}
+body.night-mode .sound-replay-btn {
+  background: #2c424e;
+  border-color: #476270;
+  color: #e6ebdd;
+}
+.sound-replay-btn:hover, .sound-replay-btn:focus-visible {
+  background: #d8ebd0;
+  outline: 3px solid #b37c46 !important;
+  outline-offset: 2px;
+  transform: scale(1.04);
+}
+
+/* Feeding Animals System ("Nakarm zwierzątko") */
+.feed-btn {
+  margin-top: 8px;
+  background: #fbfbf6;
+  border: 1.5px solid #d2dbc7;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b6247;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all .2s ease;
+  user-select: none;
+}
+body.night-mode .feed-btn {
+  background: #253942;
+  border-color: #3d5663;
+  color: #e6ebdd;
+}
+.feed-btn:hover, .feed-btn:focus-visible {
+  background: #eef3e6;
+  outline: 3px solid #b37c46 !important;
+  outline-offset: 2px;
+  transform: scale(1.06);
+}
+.feed-particle-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+.flying-food {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  left: 50%;
+  bottom: 85px;
+  transform: translateX(-50%);
+  animation: food-fly 0.75s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+.flying-food svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.18));
+}
+@keyframes food-fly {
+  0% { transform: translate(-50%, 0) scale(0.6) rotate(-20deg); opacity: 0; }
+  25% { opacity: 1; transform: translate(-50%, -45px) scale(1.25) rotate(12deg); }
+  75% { transform: translate(-50%, -135px) scale(1.05) rotate(-6deg); opacity: 1; }
+  100% { transform: translate(-50%, -160px) scale(0.2); opacity: 0; }
+}
+.floating-heart {
+  position: absolute;
+  font-size: 28px;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  animation: heart-float 0.95s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes heart-float {
+  0% { transform: translate(-50%, 0) scale(0.4); opacity: 1; }
+  100% { transform: translate(-50%, -90px) scale(1.4); opacity: 0; }
+}
+.animal-content.eating {
+  animation: animal-munch 0.5s ease-in-out;
+}
+@keyframes animal-munch {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.06) rotate(2.5deg); }
+  50% { transform: scale(0.95) rotate(-2.5deg); }
+  75% { transform: scale(1.03) rotate(1deg); }
+  100% { transform: scale(1); }
+}
+
 

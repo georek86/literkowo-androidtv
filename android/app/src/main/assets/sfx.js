@@ -113,3 +113,45 @@ export function playCardUnlock() {
     playTone(freq, 'sine', idx * 0.05, 0.4, 0.12);
   });
 }
+
+// Cute munch/crunch chewing sound for feeding animals
+export function playMunch() {
+  const ctx = getAudioContext();
+  if (!ctx || !soundEnabled) return;
+  const now = ctx.currentTime;
+  // 3 quick crunchy bites
+  [0, 0.11, 0.22].forEach((offset, idx) => {
+    const t = now + offset;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc.type = 'triangle';
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(600 + idx * 80, t);
+
+    osc.frequency.setValueAtTime(320 - idx * 30, t);
+    osc.frequency.exponentialRampToValueAtTime(120, t + 0.06);
+
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.linearRampToValueAtTime(0.24, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.08);
+  });
+}
+
+// Sparkling upward chime when an animal is revealed from shadow
+export function playMagicReveal() {
+  const ctx = getAudioContext();
+  if (!ctx || !soundEnabled) return;
+  const notes = [659.25, 783.99, 987.77, 1318.51]; // E5, G5, B5, E6
+  notes.forEach((freq, idx) => {
+    playTone(freq, 'triangle', idx * 0.07, 0.35, 0.18);
+  });
+}

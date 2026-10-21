@@ -5,9 +5,14 @@
 // 3. 'first-letter' - Initial sound & letter matching ("Na jaką literę zaczyna się Kot?")
 // 4. 'spelling' - Word spelling letter-by-letter ("Napiszmy słowo KOT" lub imię dziecka)
 // 5. 'memory' - Memory card matching mode
+// 6. 'shadow' - Silhouette mystery ("Kto się schował?")
+// 7. 'syllables' - Syllable-by-syllable word construction (Metoda sylabowa)
+// 8. 'sound' - Audio riddle / Animal sound recognition ("Kto wydał ten dźwięk?")
 
 import { normalizeAnimalKey } from './animals.js';
 import { getLetterPronunciation } from './phonics.js';
+import { getSyllablesForAnimal } from './syllables.js';
+import { hasAnimalSound } from './animal-sounds.js';
 
 const SHORT_ANIMAL_NAMES = new Set([
   'kot', 'pies', 'lis', 'lew', 'jeż', 'koń', 'rak', 'paw', 'wąż', 'osa',
@@ -25,6 +30,8 @@ export class QuizEngine {
     this.currentQuestion = null;
     this.spellingPool = allAnimals.filter(a => SHORT_ANIMAL_NAMES.has(a.name.toLocaleLowerCase('pl')));
     if (this.spellingPool.length === 0) this.spellingPool = allAnimals.filter(a => a.name.length <= 5);
+    this.soundPool = allAnimals.filter(a => hasAnimalSound(a));
+    this.syllablePool = allAnimals.filter(a => getSyllablesForAnimal(a).length >= 2);
   }
 
   setMode(mode) {
@@ -89,6 +96,64 @@ export class QuizEngine {
       return this.currentQuestion;
     }
 
+    if (this.mode === 'shadow') {
+      const animal = this.allAnimals[Math.floor(Math.random() * this.allAnimals.length)];
+      const targetChar = animal.key.toLocaleUpperCase('pl');
+      const sound = getLetterPronunciation(targetChar, this.phonicsMode);
+      const options = this.generateOptions(targetChar);
+
+      this.currentQuestion = {
+        type: 'shadow',
+        animal,
+        targetChar,
+        targetInputKey: normalizeAnimalKey(animal.key),
+        options,
+        prompt: `Kto się schował? Zgadnij po cieniu!`,
+        speech: `Kto tam się schował? Rozpoznajesz cień? Zaczyna się na literkę ${sound}!`,
+      };
+      return this.currentQuestion;
+    }
+
+    if (this.mode === 'sound') {
+      const pool = this.soundPool.length > 0 ? this.soundPool : this.allAnimals;
+      const animal = pool[Math.floor(Math.random() * pool.length)];
+      const targetChar = animal.key.toLocaleUpperCase('pl');
+      const options = this.generateOptions(targetChar);
+
+      this.currentQuestion = {
+        type: 'sound',
+        animal,
+        targetChar,
+        targetInputKey: normalizeAnimalKey(animal.key),
+        options,
+        prompt: `Kto wydał ten dźwięk? Posłuchaj!`,
+        speech: `Posłuchaj dźwięku! Jakie to zwierzątko?`,
+      };
+      return this.currentQuestion;
+    }
+
+    if (this.mode === 'syllables') {
+      const pool = this.syllablePool.length > 0 ? this.syllablePool : this.allAnimals;
+      const animal = pool[Math.floor(Math.random() * pool.length)];
+      const syllables = getSyllablesForAnimal(animal);
+      const targetSyllable = syllables[0];
+      const options = this.generateSyllableOptions(targetSyllable);
+
+      this.currentQuestion = {
+        type: 'syllables',
+        animal,
+        syllables,
+        stepIndex: 0,
+        targetSyllable,
+        targetChar: targetSyllable[0],
+        targetInputKey: normalizeAnimalKey(targetSyllable[0]),
+        options,
+        prompt: `Złóż słowo: ${animal.name.toLocaleUpperCase('pl')}`,
+        speech: `Złóżmy słowo: ${animal.name}. Pierwsza sylaba: ${targetSyllable}.`,
+      };
+      return this.currentQuestion;
+    }
+
     if (this.mode === 'spelling') {
       this.spellingCount++;
       // Periodically spell child's name if set
@@ -134,6 +199,21 @@ export class QuizEngine {
     return null;
   }
 
+  generateSyllableOptions(targetSyllable) {
+    const commonSyllables = ['BA', 'KO', 'SO', 'MA', 'TA', 'PA', 'DA', 'LE', 'RA', 'ZA', 'NO', 'WO', 'GA', 'KA', 'KA'];
+    const distractors = commonSyllables.filter(s => s !== targetSyllable);
+    for (let i = distractors.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [distractors[i], distractors[j]] = [distractors[j], distractors[i]];
+    }
+    const choices = [targetSyllable, distractors[0] || 'KO', distractors[1] || 'BA'];
+    for (let i = choices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [choices[i], choices[j]] = [choices[j], choices[i]];
+    }
+    return choices;
+  }
+
   generateOptions(targetLetter) {
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'W', 'Z'];
     const distractors = alphabet.filter(l => l !== targetLetter);
@@ -153,20 +233,72 @@ export class QuizEngine {
     if (!this.currentQuestion) return null;
     const inputKey = normalizeAnimalKey(rawKey);
 
-    if (this.mode === 'guess-letter' || this.mode === 'first-letter') {
+    if (this.mode === 'guess-letter' || this.mode === 'first-letter' || this.mode === 'shadow' || this.mode === 'sound') {
       const isCorrect = inputKey === this.currentQuestion.targetInputKey;
       const target = this.currentQuestion.targetChar;
       const animal = this.currentQuestion.animal;
       const sound = getLetterPronunciation(target, this.phonicsMode);
+
+      let successSpeech = `Brawo! Literka ${sound}! Jak ${animal.name}!`;
+      if (this.mode === 'shadow') {
+        successSpeech = `Brawo! W cieniu schował się ${animal.name}!`;
+      } else if (this.mode === 'sound') {
+        successSpeech = `Brawo! Ten dźwięk wydaje ${animal.name}!`;
+      }
+
       return {
         correct: isCorrect,
         finished: isCorrect,
         animal,
         letter: target,
-        prompt: isCorrect ? `Brawo! To literka ${target}!` : `Spróbuj jeszcze raz. Gdzie jest ${target}?`,
-        speech: isCorrect
-          ? `Brawo! Literka ${sound}! Jak ${animal.name}!`
-          : `Spróbuj jeszcze raz. Wciśnij literkę ${sound}.`,
+        prompt: isCorrect ? `Brawo! To ${animal.name}!` : `Spróbuj jeszcze raz. Gdzie jest ${target}?`,
+        speech: isCorrect ? successSpeech : `Spróbuj jeszcze raz. Wciśnij literkę ${sound}.`,
+      };
+    }
+
+    if (this.mode === 'syllables') {
+      const targetSyllable = this.currentQuestion.syllables[this.currentQuestion.stepIndex];
+      const targetInitial = normalizeAnimalKey(targetSyllable[0]);
+      const isMatch = (typeof rawKey === 'string' && rawKey.toUpperCase() === targetSyllable) || inputKey === targetInitial;
+
+      if (!isMatch) {
+        return {
+          correct: false,
+          finished: false,
+          animal: this.currentQuestion.animal,
+          prompt: `Wybierz sylabę: ${targetSyllable}`,
+          speech: `Spróbuj jeszcze raz. Szukamy sylaby ${targetSyllable}.`,
+        };
+      }
+
+      this.currentQuestion.stepIndex++;
+      const finished = this.currentQuestion.stepIndex >= this.currentQuestion.syllables.length;
+
+      if (finished) {
+        return {
+          correct: true,
+          finished: true,
+          animal: this.currentQuestion.animal,
+          prompt: `Wspaniale! ${this.currentQuestion.syllables.join(' - ')}!`,
+          speech: `Wspaniale! ${this.currentQuestion.syllables.join('... ')}! To ${this.currentQuestion.animal.name}!`,
+        };
+      }
+
+      const nextSyllable = this.currentQuestion.syllables[this.currentQuestion.stepIndex];
+      this.currentQuestion.targetSyllable = nextSyllable;
+      this.currentQuestion.targetChar = nextSyllable[0];
+      this.currentQuestion.targetInputKey = normalizeAnimalKey(nextSyllable[0]);
+      this.currentQuestion.options = this.generateSyllableOptions(nextSyllable);
+
+      return {
+        correct: true,
+        finished: false,
+        animal: this.currentQuestion.animal,
+        stepIndex: this.currentQuestion.stepIndex,
+        targetSyllable: nextSyllable,
+        options: this.currentQuestion.options,
+        prompt: `Druga sylaba: ${nextSyllable}`,
+        speech: `Świetnie! Następna sylaba to: ${nextSyllable}.`,
       };
     }
 

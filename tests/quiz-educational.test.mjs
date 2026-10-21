@@ -7,7 +7,10 @@ import { animalFacts, getFactForAnimal } from '../animal-facts.js';
 import { getLetterPronunciation, POLISH_ALPHABET_NAMES, POLISH_PHONIC_SOUNDS } from '../phonics.js';
 import { KeyboardMapHelper } from '../keyboard-map.js';
 import { MemoryGame } from '../memory-game.js';
-import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock } from '../sfx.js';
+import { hasAnimalSound, playAnimalSound } from '../animal-sounds.js';
+import { splitIntoSyllables, getSyllablesForAnimal, ANIMAL_SYLLABLES } from '../syllables.js';
+import { getFoodForAnimal } from '../animal-feed.js';
+import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, playMunch, playMagicReveal } from '../sfx.js';
 
 test('QuizEngine switches modes and formats questions properly', () => {
   const engine = new QuizEngine(animals);
@@ -190,6 +193,8 @@ test('SFX functions execute safely in non-browser / headless contexts', () => {
     playTryAgain();
     playClick();
     playCardUnlock();
+    playMunch();
+    playMagicReveal();
   });
 });
 
@@ -212,4 +217,82 @@ test('KeyboardMapHelper operates safely in headless environments', () => {
     helper.clearTarget();
     helper.flashPress('B');
   });
+});
+
+test('QuizEngine supports shadow silhouette mode', () => {
+  const engine = new QuizEngine(animals);
+  const q = engine.setMode('shadow');
+  assert.equal(engine.mode, 'shadow');
+  assert.ok(q.prompt.includes('cieniu'));
+  assert.ok(q.targetChar);
+  const res = engine.checkInput(q.targetChar);
+  assert.equal(res.correct, true);
+  assert.equal(res.finished, true);
+  assert.ok(res.speech.includes('cieniu'));
+});
+
+test('QuizEngine supports animal sound audio quiz mode', () => {
+  const engine = new QuizEngine(animals);
+  const q = engine.setMode('sound');
+  assert.equal(engine.mode, 'sound');
+  assert.ok(q.prompt.includes('dźwięk'));
+  const res = engine.checkInput(q.targetChar);
+  assert.equal(res.correct, true);
+  assert.equal(res.finished, true);
+});
+
+test('QuizEngine supports syllables mode and step-by-step progress', () => {
+  const engine = new QuizEngine(animals);
+  const q = engine.setMode('syllables');
+  assert.equal(engine.mode, 'syllables');
+  assert.ok(q.syllables.length >= 2);
+  assert.equal(q.stepIndex, 0);
+
+  // Step 1: correct syllable
+  const s1 = q.syllables[0];
+  const res1 = engine.checkInput(s1);
+  assert.equal(res1.correct, true);
+
+  if (q.syllables.length === 2) {
+    assert.equal(res1.finished, false);
+    // Step 2: correct second syllable
+    const s2 = q.syllables[1];
+    const res2 = engine.checkInput(s2);
+    assert.equal(res2.correct, true);
+    assert.equal(res2.finished, true);
+  }
+});
+
+test('animal-sounds module detects sounds and runs safely in headless', () => {
+  assert.equal(hasAnimalSound({ name: 'kot' }), true);
+  assert.equal(hasAnimalSound({ name: 'pies' }), true);
+  assert.equal(hasAnimalSound({ name: 'krowa' }), true);
+  assert.equal(hasAnimalSound({ name: 'nieznane_zwierze' }), false);
+  assert.doesNotThrow(() => {
+    playAnimalSound({ name: 'kot' });
+    playAnimalSound({ name: 'pies' });
+  });
+});
+
+test('syllables module divides words and animals correctly', () => {
+  assert.deepEqual(splitIntoSyllables('krowa'), ['KRO', 'WA']);
+  assert.deepEqual(splitIntoSyllables('żaba'), ['ŻA', 'BA']);
+  assert.deepEqual(splitIntoSyllables('papuga'), ['PA', 'PU', 'GA']);
+  const sKot = getSyllablesForAnimal({ name: 'kot' });
+  assert.deepEqual(sKot, ['KOT']);
+});
+
+test('animal-feed module maps treats and provides clean SVGs', () => {
+  const kotFood = getFoodForAnimal({ name: 'kot' });
+  assert.equal(kotFood.foodKey, 'ryba');
+  assert.ok(kotFood.svg.includes('<svg'));
+
+  const krolikFood = getFoodForAnimal({ name: 'królik' });
+  assert.equal(krolikFood.foodKey, 'marchewka');
+
+  const piesFood = getFoodForAnimal({ name: 'pies' });
+  assert.equal(piesFood.foodKey, 'kostka');
+
+  const defaultFood = getFoodForAnimal({ name: 'jakis_inny' });
+  assert.equal(defaultFood.foodKey, 'jablko');
 });

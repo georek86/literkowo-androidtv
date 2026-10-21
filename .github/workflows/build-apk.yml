@@ -29,7 +29,7 @@ jobs:
       - name: Sync web assets to Android
         run: |
           mkdir -p android/app/src/main/assets
-          cp index.html style.css app.js animals.js gaze.js animal-art.js animals-extended.js animals-more.js habitats.js play-state.js keyboard-protection.js quiz-engine.js collection.js animal-facts.js sfx.js phonics.js keyboard-map.js memory-game.js manifest.webmanifest icon.svg android/app/src/main/assets/
+          cp index.html style.css app.js animals.js gaze.js animal-art.js animals-extended.js animals-more.js habitats.js play-state.js keyboard-protection.js quiz-engine.js collection.js animal-facts.js sfx.js phonics.js keyboard-map.js memory-game.js animal-sounds.js syllables.js animal-feed.js manifest.webmanifest icon.svg android/app/src/main/assets/
 
       - name: Build Android APK
         working-directory: android
