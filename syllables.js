@@ -23,8 +23,10 @@ export const ANIMAL_SYLLABLES = Object.freeze({
   'łoś': ['ŁOŚ'],
   'mysz': ['MYSZ'],
   'tur': ['TUR'],
+  'jeż': ['JEŻ'],
 
   // 2-syllable words
+  'jeżyk': ['JE', 'ŻYK'],
   'żaba': ['ŻA', 'BA'],
   'krowa': ['KRO', 'WA'],
   'sowa': ['SO', 'WA'],
@@ -60,7 +62,6 @@ export const ANIMAL_SYLLABLES = Object.freeze({
   'jeleń': ['JE', 'LEŃ'],
   'sarna': ['SAR', 'NA'],
   'suseł': ['SU', 'SEŁ'],
-  'jeż': ['JE', 'ŻYK'],
 
   // 3-syllable words
   'papuga': ['PA', 'PU', 'GA'],
@@ -85,6 +86,11 @@ export function splitIntoSyllables(word) {
   const clean = word.trim().toLocaleLowerCase('pl');
   if (ANIMAL_SYLLABLES[clean]) {
     return [...ANIMAL_SYLLABLES[clean]];
+  }
+
+  // Handle multi-word animal names (e.g. "niedźwiedź polarny")
+  if (clean.includes(' ')) {
+    return clean.split(/\s+/).flatMap(part => splitIntoSyllables(part));
   }
 
   // If very short or no vowels
