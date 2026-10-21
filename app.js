@@ -127,6 +127,52 @@ const isTouchDevice = (typeof window !== 'undefined') && (
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent || '')
 );
 
+// --- Mobile viewport & system keyboard (IME) geometry ----------------------
+// Android WebView (adjustResize), Chrome (interactive-widget=resizes-content)
+// and iOS shrink the visual viewport when the system keyboard appears. Mirror
+// that height into --app-height so every playing layout follows the really
+// visible area instead of sliding underneath the keyboard. The `ime-open` class
+// lets CSS hide the redundant in-app keys and keep the animal card readable.
+const rootEl = document.documentElement;
+let viewportBaseline = 0;
+let nativeImeOpen = null;
+
+function readViewportHeight() {
+  const vv = window.visualViewport;
+  const height = vv ? vv.height : window.innerHeight;
+  return Math.max(1, Math.round(height));
+}
+
+function setImeOpen(open) {
+  document.body.classList.toggle('ime-open', Boolean(open));
+  keyboardDockEl?.classList.toggle('ime-open', Boolean(open));
+}
+
+function syncViewportGeometry({ resetBaseline = false } = {}) {
+  const height = readViewportHeight();
+  if (resetBaseline || phase !== 'playing' || viewportBaseline === 0) {
+    viewportBaseline = height;
+  } else {
+    viewportBaseline = Math.max(viewportBaseline, height);
+  }
+  rootEl.style.setProperty('--app-height', `${height}px`);
+
+  const mobileSurface = isTouchDevice || Boolean(window.AndroidBridge);
+  const detectedOpen = mobileSurface && phase === 'playing' &&
+    viewportBaseline - height > Math.max(120, viewportBaseline * 0.18);
+  // Native MainActivity sends authoritative ime-show/ime-hide events; the
+  // visual-viewport heuristic covers the browser build.
+  setImeOpen(nativeImeOpen === null ? detectedOpen : (nativeImeOpen || detectedOpen));
+}
+
+window.addEventListener('resize', () => syncViewportGeometry(), { passive: true });
+window.visualViewport?.addEventListener('resize', () => syncViewportGeometry(), { passive: true });
+window.visualViewport?.addEventListener('scroll', () => syncViewportGeometry(), { passive: true });
+window.addEventListener('orientationchange', () => {
+  nativeImeOpen = null;
+  setTimeout(() => syncViewportGeometry({ resetBaseline: true }), 300);
+});
+
 function updateKeyboardVisibility() {
   const shouldEnable = isTouchDevice || Boolean(window.AndroidBridge) || collection.isKeyboardHint();
   keyboardHelper.setEnabled(shouldEnable);
@@ -172,16 +218,25 @@ export function hideSystemKeyboard() {
   }
 }
 
-// Native IME open/close events dispatched by installImeDetector() in MainActivity
+// Close the IME together with any transient `ime-open` layout state (pause,
+// finish and return to the welcome screen must never keep the keyboard up).
+function closeIme() {
+  hideSystemKeyboard();
+  nativeImeOpen = null;
+  setImeOpen(false);
+  setTimeout(() => syncViewportGeometry({ resetBaseline: true }), 250);
+}
+
+// Native IME open/close events dispatched by MainActivity's IME detector.
 window.addEventListener('ime-show', () => {
-  keyboardDockEl?.classList.add('ime-open');
-  // Ensure the dock is scrolled into view when IME pushes layout up
-  if (systemImeInput && document.activeElement !== systemImeInput) {
-    systemImeInput.focus({ preventScroll: false });
-  }
+  nativeImeOpen = true;
+  setImeOpen(true);
+  syncViewportGeometry();
 });
 window.addEventListener('ime-hide', () => {
-  keyboardDockEl?.classList.remove('ime-open');
+  nativeImeOpen = false;
+  setImeOpen(false);
+  syncViewportGeometry();
 });
 const hasKeyboardLock = Boolean(navigator.keyboard?.lock);
 
@@ -1076,14 +1131,12 @@ async function begin(resuming = false) {
   finishSection.hidden = true;
   playInstructionsSection.hidden = false;
   renderAppearance();
-  parentButton.textContent = 'Dla rodzica · przytrzymaj';
+  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? 'Dla rodzica' : 'Dla rodzica · przytrzymaj';
   parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
   document.body.classList.add('playing');
   phase = 'playing';
   updateKeyboardVisibility();
-  if (isTouchDevice || window.AndroidBridge) {
-    setTimeout(openSystemKeyboard, 180);
-  }
+  syncViewportGeometry({ resetBaseline: true });
   state.start();
   startClock();
   startButton.disabled = false;
@@ -1098,6 +1151,7 @@ async function begin(resuming = false) {
 
 function pause() {
   if (phase !== 'playing') return;
+  closeIme();
   if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   remaining = Math.max(0, endAt - performance.now());
@@ -1119,6 +1173,7 @@ function pause() {
 
 function finish() {
   if (!['playing', 'paused'].includes(phase)) return;
+  closeIme();
   if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   phase = 'finished';
@@ -1140,7 +1195,7 @@ function finish() {
   document.body.classList.remove('playing');
   document.body.classList.add('sleeping');
   stageEl.hidden = true;
-  parentButton.textContent = 'Dla rodzica · przytrzymaj';
+  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? 'Dla rodzica' : 'Dla rodzica · przytrzymaj';
   parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wrócić do początku');
   setTimeout(() => parentButton.focus(), 50);
 }
@@ -1151,6 +1206,7 @@ stopButton.addEventListener('click', returnToWelcome);
 
 function returnToWelcome() {
   phase = 'welcome';
+  closeIme();
   if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   state.stop();
@@ -1258,8 +1314,28 @@ function handleKeyboardToggle(e) {
   lastToggleTime = now;
   keyboardHelper.toggleCollapsed();
 }
-btnToggleKeyboard?.addEventListener('pointerdown', handleKeyboardToggle);
-btnToggleKeyboard?.addEventListener('click', handleKeyboardToggle);
+
+// Touch input needs pointerdown for immediate feedback, but the browser then
+// emits a synthetic click for the same gesture. Binding both naively fired
+// every action twice (two letters, two toggles, two system-keyboard requests).
+// This helper activates on pointerdown and only accepts the follow-up click
+// when it comes from the keyboard (detail === 0) or from a separate gesture.
+function bindPress(el, handler) {
+  if (!el) return;
+  let lastPointerAt = 0;
+  el.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || event.isPrimary === false) return;
+    lastPointerAt = performance.now();
+    handler(event);
+  });
+  el.addEventListener('click', event => {
+    if (event.detail === 0) { handler(event); return; }
+    if (event.button !== 0) return;
+    if (performance.now() - lastPointerAt > 450) handler(event);
+  });
+}
+
+bindPress(btnToggleKeyboard, handleKeyboardToggle);
 
 function handleImeInput(char) {
   if (!char) return;
@@ -1280,14 +1356,9 @@ if (systemImeInput) {
   });
 
   systemImeInput.addEventListener('blur', () => {
-    setTimeout(() => {
-      keyboardDockEl?.classList.remove('ime-focused');
-      // On Android, if the input loses focus but IME is still marked open,
-      // quietly re-focus it so characters keep flowing into the game.
-      if (keyboardDockEl?.classList.contains('ime-open') && phase === 'playing') {
-        systemImeInput.focus({ preventScroll: true });
-      }
-    }, 200);
+    // Never re-focus here: it made the keyboard impossible to dismiss and
+    // stole focus after the child tapped "hide".
+    keyboardDockEl?.classList.remove('ime-focused');
   });
 
   systemImeInput.addEventListener('input', () => {
@@ -1299,12 +1370,16 @@ if (systemImeInput) {
     }
   });
 
+  // Only control keys are handled here. Printable characters arrive through
+  // the `input` event; handling them in both places typed every letter twice.
   systemImeInput.addEventListener('keydown', (e) => {
     if (e.key === ' ' || e.key === 'Spacebar') {
       e.preventDefault();
       systemImeInput.value = '';
       handleImeInput(' ');
     } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      systemImeInput.value = '';
       handleSoftwareKey('Backspace');
     } else if (e.key === 'Enter') {
       e.preventDefault();
@@ -1314,30 +1389,19 @@ if (systemImeInput) {
       } else {
         feedCurrentAnimal();
       }
-    } else if (e.key && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      handleImeInput(e.key);
     }
   });
 }
 
-btnSystemIme?.addEventListener('click', (e) => {
-  e.preventDefault();
-  openSystemKeyboard();
-});
-btnSystemIme?.addEventListener('pointerdown', (e) => {
+bindPress(btnSystemIme, (e) => {
   e.preventDefault();
   openSystemKeyboard();
 });
 
-btnWelcomeIme?.addEventListener('click', (e) => {
+bindPress(btnWelcomeIme, (e) => {
   e.preventDefault();
   begin();
-  setTimeout(openSystemKeyboard, 120);
-});
-btnWelcomeIme?.addEventListener('pointerdown', (e) => {
-  e.preventDefault();
-  begin();
-  setTimeout(openSystemKeyboard, 120);
+  setTimeout(openSystemKeyboard, 180);
 });
 
 settingNightMode?.addEventListener('change', () => {

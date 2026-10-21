@@ -3,6 +3,8 @@ package pl.literkowo;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,6 +14,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.JavascriptInterface;
@@ -56,6 +59,9 @@ public class MainActivity extends Activity {
             webView.requestFocus();
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
+                // Refresh the IME connection after the DOM/input focus change,
+                // then request the keyboard for the view that owns it.
+                imm.restartInput(webView);
                 imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
             }
         }
@@ -123,6 +129,10 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
+        // Keep CSS pixels independent of the system font-size setting, so the
+        // keyboard/dock layout matches the physical resolution on every phone.
+        settings.setTextZoom(100);
+
         // Viewport scaling: useWideViewPort allows viewport meta tag, overviewMode false ensures 1:1 CSS scaling
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(false);
@@ -157,30 +167,67 @@ public class MainActivity extends Activity {
         );
     }
 
+    /** Notifies the web app (and CSS) when the system IME becomes visible. */
+    private void setImeVisible(boolean visible) {
+        if (visible == imeVisible) return;
+        imeVisible = visible;
+        if (webView != null) {
+            final String js =
+                "document.body.classList." + (visible ? "add" : "remove") + "('ime-open');" +
+                "window.dispatchEvent(new CustomEvent('ime-" + (visible ? "show" : "hide") + "'));";
+            webView.evaluateJavascript(js, null);
+        }
+        if (!visible) {
+            // IME closed — restore immersive mode after the window settles.
+            mainHandler.postDelayed(this::hideSystemUI, 150);
+        }
+    }
+
     /**
-     * Install a layout listener that detects IME open/close by measuring the root
-     * view height change, and notifies JS so it can scroll the dock into view.
-     * Also prevents hideSystemUI() from dismissing the keyboard in a focus loop.
+     * Detect IME open/close from real window insets (API 30+) or from the
+     * visible display frame (older WebViews). The previous implementation
+     * compared a view with its own root, so the height difference was always
+     * zero and the JS never learned that the keyboard was on screen.
      */
     private void installImeDetector() {
-        final View rootView = getWindow().getDecorView().getRootView();
+        final View decorView = getWindow().getDecorView();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            decorView.setOnApplyWindowInsetsListener((view, insets) -> {
+                setImeVisible(insets.isVisible(WindowInsets.Type.ime()));
+                return view.onApplyWindowInsets(insets);
+            });
+            decorView.requestApplyInsets();
+            return;
+        }
+
+        final View rootView = decorView.getRootView();
         rootView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            int heightDiff = rootView.getRootView().getHeight() - rootView.getHeight();
-            boolean nowVisible = heightDiff > 200; // more than 200px gap == IME is open
-            if (nowVisible != imeVisible) {
-                imeVisible = nowVisible;
-                if (webView != null) {
-                    final String js = imeVisible
-                        ? "window.dispatchEvent(new CustomEvent('ime-show'));"
-                        : "window.dispatchEvent(new CustomEvent('ime-hide'));";
-                    webView.evaluateJavascript(js, null);
-                }
-                if (!imeVisible) {
-                    // IME closed — restore immersive mode
-                    mainHandler.postDelayed(() -> hideSystemUI(), 150);
-                }
-            }
+            Rect visibleFrame = new Rect();
+            decorView.getWindowVisibleDisplayFrame(visibleFrame);
+            int screenHeight = rootView.getHeight();
+            int visibleHeight = Math.max(0, visibleFrame.bottom - visibleFrame.top);
+            int heightDiff = screenHeight - visibleHeight;
+            // Ignore navigation/status bars; only a keyboard-sized gap counts.
+            boolean nowVisible = heightDiff > Math.max(150, (int) (screenHeight * 0.15));
+            setImeVisible(nowVisible);
         });
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Rotation / keyboard resize: re-apply immersive flags (but never while
+        // the IME is visible — that can dismiss the keyboard) and let the
+        // WebView recompute its viewport (width=device-width, 1:1 CSS pixels).
+        if (!imeVisible) hideSystemUI();
+        if (webView != null) {
+            webView.requestLayout();
+            if (!imeVisible) {
+                webView.evaluateJavascript(
+                    "window.dispatchEvent(new Event('resize'));", null);
+            }
+        }
     }
 
     @Override
