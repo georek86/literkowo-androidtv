@@ -4,24 +4,61 @@
     android:height="180dp"
     android:viewportWidth="320"
     android:viewportHeight="180">
-    <!-- Background -->
+
+    <!-- Background - sage green tint -->
     <path
         android:fillColor="#E8EDDF"
         android:pathData="M0,0h320v180h-320z" />
+
     <!-- Rounded card mark -->
     <path
         android:fillColor="#DFE6D5"
         android:pathData="M60,40h60a20,20 0 0,1 20,20v60a20,20 0 0,1 -20,20h-60a20,20 0 0,1 -20,-20v-60a20,20 0 0,1 20,-20z" />
+
     <!-- Letter L in the mark -->
     <path
         android:fillColor="#4C6652"
         android:pathData="M80,60h16v60h32v14h-48z" />
-    <!-- Letter dot -->
+
+    <!-- Original amber dot -->
     <path
         android:fillColor="#B2815D"
         android:pathData="M118,100a7,7 0 1,0 14,0a7,7 0 1,0 -14,0" />
-    <!-- Word text approximation in vector -->
+
+    <!-- Fork badge: white circle top-right corner of card -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M121,52 a12,12 0 1,1 24,0 a12,12 0 1,1 -24,0" />
+    <path
+        android:fillColor="#C8D4BC"
+        android:pathData="M120,52 a13,13 0 1,1 26,0 a13,13 0 1,1 -26,0 M121,52 a12,12 0 1,1 24,0 a12,12 0 1,1 -24,0" />
+
+    <!-- Fork: top-left node -->
+    <path
+        android:fillColor="#4C6652"
+        android:pathData="M128.5,46 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+
+    <!-- Fork: top-right node -->
+    <path
+        android:fillColor="#4C6652"
+        android:pathData="M136.5,46 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+
+    <!-- Fork: merge node amber -->
+    <path
+        android:fillColor="#B2815D"
+        android:pathData="M130.5,56 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+
+    <!-- Fork lines -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4C6652"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M131,46 L133,53.5 M139,46 L133,53.5" />
+
+    <!-- Word "literkowo" approximation -->
     <path
         android:fillColor="#354C3E"
         android:pathData="M165,70h12v44h22v10h-34z M205,84h12v40h-12z M205,68h12v10h-12z M225,72h10v12h12v10h-12v20q0,10 12,10h2v10q-8,0 -16,-4q-8,-4 -8,-16z M255,96q0,-14 10,-20q10,-6 20,-6q12,0 20,7q8,7 8,19v6h-44q0,10 7,14q7,4 15,4q8,0 16,-4v10q-8,4 -18,4q-14,0 -24,-8q-10,-8 -10,-26z" />
+
 </vector>

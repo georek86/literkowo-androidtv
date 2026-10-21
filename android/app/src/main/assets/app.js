@@ -89,6 +89,10 @@ const nightBtn = $('night-btn');
 const memoryBoardEl = $('memory-board');
 const keyboardMapContainer = $('keyboard-map-container');
 const btnToggleKeyboard = $('btn-toggle-keyboard');
+const keyboardDockEl = $('keyboard-dock');
+const systemImeBar = $('system-ime-bar');
+const btnSystemIme = $('btn-system-ime');
+const btnWelcomeIme = $('btn-welcome-ime');
 const systemImeInput = $('system-ime-input');
 const settingProfileSelect = $('setting-profile');
 const settingChildNameInput = $('setting-child-name');
@@ -116,11 +120,128 @@ let phase = 'welcome';
 const album = new AnimalAlbum();
 let currentAnimal = album.current;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+const isTouchDevice = (typeof window !== 'undefined') && (
+  ('ontouchstart' in window) ||
+  (navigator.maxTouchPoints > 0) ||
+  Boolean(window.matchMedia?.('(pointer: coarse)')?.matches) ||
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent || '')
+);
+
+// --- Mobile viewport & system keyboard (IME) geometry ----------------------
+// Android WebView (adjustResize), Chrome (interactive-widget=resizes-content)
+// and iOS shrink the visual viewport when the system keyboard appears. Mirror
+// that height into --app-height so every playing layout follows the really
+// visible area instead of sliding underneath the keyboard. The `ime-open` class
+// lets CSS hide the redundant in-app keys and keep the animal card readable.
+const rootEl = document.documentElement;
+let viewportBaseline = 0;
+let nativeImeOpen = null;
+
+function readViewportHeight() {
+  const vv = window.visualViewport;
+  const height = vv ? vv.height : window.innerHeight;
+  return Math.max(1, Math.round(height));
+}
+
+function setImeOpen(open) {
+  document.body.classList.toggle('ime-open', Boolean(open));
+  keyboardDockEl?.classList.toggle('ime-open', Boolean(open));
+}
+
+function syncViewportGeometry({ resetBaseline = false } = {}) {
+  const height = readViewportHeight();
+  if (resetBaseline || phase !== 'playing' || viewportBaseline === 0) {
+    viewportBaseline = height;
+  } else {
+    viewportBaseline = Math.max(viewportBaseline, height);
+  }
+  rootEl.style.setProperty('--app-height', `${height}px`);
+
+  const mobileSurface = isTouchDevice || Boolean(window.AndroidBridge);
+  const detectedOpen = mobileSurface && phase === 'playing' &&
+    viewportBaseline - height > Math.max(120, viewportBaseline * 0.18);
+  // Native MainActivity sends authoritative ime-show/ime-hide events; the
+  // visual-viewport heuristic covers the browser build.
+  setImeOpen(nativeImeOpen === null ? detectedOpen : (nativeImeOpen || detectedOpen));
+}
+
+window.addEventListener('resize', () => syncViewportGeometry(), { passive: true });
+window.visualViewport?.addEventListener('resize', () => syncViewportGeometry(), { passive: true });
+window.visualViewport?.addEventListener('scroll', () => syncViewportGeometry(), { passive: true });
+window.addEventListener('orientationchange', () => {
+  nativeImeOpen = null;
+  setTimeout(() => syncViewportGeometry({ resetBaseline: true }), 300);
+});
+
+function updateKeyboardVisibility() {
+  const shouldEnable = isTouchDevice || Boolean(window.AndroidBridge) || collection.isKeyboardHint();
+  keyboardHelper.setEnabled(shouldEnable);
+  if (keyboardDockEl) {
+    keyboardDockEl.hidden = phase !== 'playing' || !shouldEnable;
+  }
+  if (systemImeBar) {
+    systemImeBar.hidden = phase !== 'playing' || !shouldEnable;
+  }
+  if (btnToggleKeyboard) {
+    btnToggleKeyboard.hidden = phase !== 'playing' || !shouldEnable;
+    const txt = btnToggleKeyboard.querySelector('#toggle-kb-text');
+    if (txt) txt.textContent = keyboardHelper.collapsed ? 'Klawiatura' : 'Schowaj';
+  }
+}
+
+export function openSystemKeyboard() {
+  if (systemImeInput) {
+    systemImeInput.focus();
+    systemImeInput.click();
+  }
+  if (window.AndroidBridge?.showSystemKeyboard) {
+    try { window.AndroidBridge.showSystemKeyboard(); } catch {}
+    // Retry: AndroidBridge.showSystemKeyboard calls evaluateJavascript internally
+    // and needs two passes with a delay to guarantee IME appears on all WebView versions.
+    setTimeout(() => {
+      if (document.activeElement !== systemImeInput && systemImeInput) {
+        systemImeInput.focus();
+      }
+      if (window.AndroidBridge?.showSystemKeyboard) {
+        try { window.AndroidBridge.showSystemKeyboard(); } catch {}
+      }
+    }, 500);
+  }
+}
+
+export function hideSystemKeyboard() {
+  if (systemImeInput) {
+    systemImeInput.blur();
+  }
+  if (window.AndroidBridge?.hideSystemKeyboard) {
+    try { window.AndroidBridge.hideSystemKeyboard(); } catch {}
+  }
+}
+
+// Close the IME together with any transient `ime-open` layout state (pause,
+// finish and return to the welcome screen must never keep the keyboard up).
+function closeIme() {
+  hideSystemKeyboard();
+  nativeImeOpen = null;
+  setImeOpen(false);
+  setTimeout(() => syncViewportGeometry({ resetBaseline: true }), 250);
+}
+
+// Native IME open/close events dispatched by MainActivity's IME detector.
+window.addEventListener('ime-show', () => {
+  nativeImeOpen = true;
+  setImeOpen(true);
+  syncViewportGeometry();
+});
+window.addEventListener('ime-hide', () => {
+  nativeImeOpen = false;
+  setImeOpen(false);
+  syncViewportGeometry();
+});
 const hasKeyboardLock = Boolean(navigator.keyboard?.lock);
 
 // Touch-first devices start in a window without requiring keyboard protection.
-if (window.matchMedia('(pointer: coarse)').matches) {
+if (isTouchDevice) {
   if (fullscreenCheckbox) fullscreenCheckbox.checked = false;
   if (touchNoteEl) touchNoteEl.hidden = false;
 }
@@ -735,10 +856,7 @@ function handleSoftwareKey(key) {
   }
 
   if (key === 'SystemIME') {
-    if (systemImeInput) {
-      systemImeInput.focus();
-      systemImeInput.click();
-    }
+    openSystemKeyboard();
     return;
   }
 
@@ -748,8 +866,9 @@ function handleSoftwareKey(key) {
   }
 
   if (phase === 'welcome') {
-    if (key === ' ' || key === 'Enter') {
-      begin();
+    begin();
+    if (key !== ' ' && key !== 'Enter') {
+      setTimeout(() => discoverAnimal(key), 80);
     }
     return;
   }
@@ -1012,11 +1131,12 @@ async function begin(resuming = false) {
   finishSection.hidden = true;
   playInstructionsSection.hidden = false;
   renderAppearance();
-  parentButton.textContent = 'Dla rodzica · przytrzymaj';
+  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? 'Dla rodzica' : 'Dla rodzica · przytrzymaj';
   parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
   document.body.classList.add('playing');
   phase = 'playing';
-  if (btnToggleKeyboard) btnToggleKeyboard.hidden = !keyboardHelper.enabled;
+  updateKeyboardVisibility();
+  syncViewportGeometry({ resetBaseline: true });
   state.start();
   startClock();
   startButton.disabled = false;
@@ -1031,6 +1151,8 @@ async function begin(resuming = false) {
 
 function pause() {
   if (phase !== 'playing') return;
+  closeIme();
+  if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   remaining = Math.max(0, endAt - performance.now());
   if (remaining === 0) { finish(); return; }
@@ -1051,6 +1173,8 @@ function pause() {
 
 function finish() {
   if (!['playing', 'paused'].includes(phase)) return;
+  closeIme();
+  if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   phase = 'finished';
   state.stop();
@@ -1071,7 +1195,7 @@ function finish() {
   document.body.classList.remove('playing');
   document.body.classList.add('sleeping');
   stageEl.hidden = true;
-  parentButton.textContent = 'Dla rodzica · przytrzymaj';
+  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? 'Dla rodzica' : 'Dla rodzica · przytrzymaj';
   parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wrócić do początku');
   setTimeout(() => parentButton.focus(), 50);
 }
@@ -1082,6 +1206,8 @@ stopButton.addEventListener('click', returnToWelcome);
 
 function returnToWelcome() {
   phase = 'welcome';
+  closeIme();
+  if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   state.stop();
   clearTimeout(sessionTimer);
@@ -1174,33 +1300,109 @@ settingPhonicsSelect?.addEventListener('change', () => {
 
 settingKeyboardHint?.addEventListener('change', () => {
   collection.setKeyboardHint(settingKeyboardHint.checked);
-  keyboardHelper.setEnabled(settingKeyboardHint.checked);
-  if (btnToggleKeyboard) {
-    btnToggleKeyboard.hidden = phase !== 'playing' || !settingKeyboardHint.checked;
-  }
+  updateKeyboardVisibility();
 });
 
-btnToggleKeyboard?.addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
+let lastToggleTime = 0;
+function handleKeyboardToggle(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const now = performance.now();
+  if (now - lastToggleTime < 250) return;
+  lastToggleTime = now;
   keyboardHelper.toggleCollapsed();
-});
+}
+
+// Touch input needs pointerdown for immediate feedback, but the browser then
+// emits a synthetic click for the same gesture. Binding both naively fired
+// every action twice (two letters, two toggles, two system-keyboard requests).
+// This helper activates on pointerdown and only accepts the follow-up click
+// when it comes from the keyboard (detail === 0) or from a separate gesture.
+function bindPress(el, handler) {
+  if (!el) return;
+  let lastPointerAt = 0;
+  el.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || event.isPrimary === false) return;
+    lastPointerAt = performance.now();
+    handler(event);
+  });
+  el.addEventListener('click', event => {
+    if (event.detail === 0) { handler(event); return; }
+    if (event.button !== 0) return;
+    if (performance.now() - lastPointerAt > 450) handler(event);
+  });
+}
+
+bindPress(btnToggleKeyboard, handleKeyboardToggle);
+
+function handleImeInput(char) {
+  if (!char) return;
+  if (phase === 'welcome') {
+    begin();
+    setTimeout(() => discoverAnimal(char), 100);
+  } else {
+    handleSoftwareKey(char);
+  }
+}
 
 if (systemImeInput) {
+  systemImeInput.addEventListener('focus', () => {
+    keyboardDockEl?.classList.add('ime-focused');
+    if (window.AndroidBridge?.showSystemKeyboard) {
+      try { window.AndroidBridge.showSystemKeyboard(); } catch {}
+    }
+  });
+
+  systemImeInput.addEventListener('blur', () => {
+    // Never re-focus here: it made the keyboard impossible to dismiss and
+    // stole focus after the child tapped "hide".
+    keyboardDockEl?.classList.remove('ime-focused');
+  });
+
   systemImeInput.addEventListener('input', () => {
     const val = systemImeInput.value;
     systemImeInput.value = '';
-    if (val) {
-      const char = val[val.length - 1];
-      handleSoftwareKey(char);
+    if (val && val.length > 0) {
+      const char = val.charAt(val.length - 1);
+      handleImeInput(char);
     }
   });
+
+  // Only control keys are handled here. Printable characters arrive through
+  // the `input` event; handling them in both places typed every letter twice.
   systemImeInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' || e.key === 'Enter') {
-      handleSoftwareKey(e.key);
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      systemImeInput.value = '';
+      handleImeInput(' ');
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      systemImeInput.value = '';
+      handleSoftwareKey('Backspace');
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      systemImeInput.value = '';
+      if (phase === 'welcome') {
+        begin();
+      } else {
+        feedCurrentAnimal();
+      }
     }
   });
 }
+
+bindPress(btnSystemIme, (e) => {
+  e.preventDefault();
+  openSystemKeyboard();
+});
+
+bindPress(btnWelcomeIme, (e) => {
+  e.preventDefault();
+  begin();
+  setTimeout(openSystemKeyboard, 180);
+});
 
 settingNightMode?.addEventListener('change', () => {
   applyNightMode(settingNightMode.checked);
@@ -1711,7 +1913,7 @@ for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type,
 }, { capture: true, passive: true });
 document.querySelector('main').addEventListener('pointerdown', event => {
   if (phase === 'playing') {
-    if (event.target.closest('#keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
+    if (event.target.closest('#keyboard-dock, #system-ime-bar, #btn-system-ime, #system-ime-input, #keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
     event.preventDefault();
     if (event.isPrimary && event.button === 0) discoverAnimal(' ');
   }
@@ -1729,7 +1931,12 @@ window.addEventListener('pageshow', event => {
 });
 
 applyNightMode(collection.isNightMode());
-keyboardHelper.setEnabled(collection.isKeyboardHint());
+updateKeyboardVisibility();
+stageEl?.addEventListener('click', () => {
+  if (phase === 'welcome') {
+    begin();
+  }
+});
 quizEngine.setPhonicsMode(collection.getPhonicsMode());
 quizEngine.setChildName(collection.getChildName());
 

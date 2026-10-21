@@ -4,6 +4,23 @@
 
 import { normalizeAnimalKey } from './animals.js';
 
+// Activate on pointerdown (snappy touch feedback) without running the action a
+// second time when the browser follows up with a synthetic click. Clicks with
+// detail === 0 come from keyboard activation and are still accepted.
+function bindPress(el, handler) {
+  let lastPointerAt = 0;
+  el.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || event.isPrimary === false) return;
+    lastPointerAt = performance.now();
+    handler(event);
+  });
+  el.addEventListener('click', event => {
+    if (event.detail === 0) { handler(event); return; }
+    if (event.button !== 0) return;
+    if (performance.now() - lastPointerAt > 450) handler(event);
+  });
+}
+
 export const KEYBOARD_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Ó', 'Ę'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ł', 'Ą', 'Ś', 'Ć'],
@@ -35,7 +52,7 @@ export class KeyboardMapHelper {
   setEnabled(enabled) {
     this.enabled = Boolean(enabled);
     if (this.container) {
-      this.container.hidden = !this.enabled;
+      this.container.hidden = !this.enabled || this.collapsed;
     }
   }
 
@@ -43,6 +60,7 @@ export class KeyboardMapHelper {
     this.collapsed = Boolean(collapsed);
     if (this.container) {
       this.container.classList.toggle('collapsed', this.collapsed);
+      this.container.hidden = this.collapsed || !this.enabled;
       this.container.setAttribute('aria-expanded', String(!this.collapsed));
     }
     this.onCollapseChange?.(this.collapsed);
@@ -61,11 +79,14 @@ export class KeyboardMapHelper {
   render() {
     if (!this.container) return;
     this.container.replaceChildren();
-    this.container.className = 'keyboard-map-hint software-keyboard';
+    this.container.className = 'keyboard-map-container software-keyboard';
     this.container.setAttribute('role', 'region');
     this.container.setAttribute('aria-label', 'Klawiatura ekranowa dla dzieci');
     this.container.setAttribute('aria-expanded', String(!this.collapsed));
-    if (this.collapsed) this.container.classList.add('collapsed');
+    if (this.collapsed) {
+      this.container.classList.add('collapsed');
+      this.container.hidden = true;
+    }
 
     // Letter rows
     for (const row of KEYBOARD_ROWS) {
@@ -85,7 +106,7 @@ export class KeyboardMapHelper {
           this.triggerKey(key);
         };
 
-        btn.addEventListener('pointerdown', handlePress);
+        bindPress(btn, handlePress);
 
         rowEl.appendChild(btn);
         this.keyElements.set(key.toLowerCase(), btn);
@@ -108,11 +129,12 @@ export class KeyboardMapHelper {
     repeatBtn.dataset.key = 'r';
     repeatBtn.innerHTML = '<span class="kb-icon">🔊</span><span class="kb-label">Powtórz</span>';
     repeatBtn.setAttribute('aria-label', 'Powtórz dźwięk lub nazwę zwierzaka');
-    repeatBtn.addEventListener('pointerdown', (e) => {
+    const handleRepeat = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey('r');
-    });
+    };
+    bindPress(repeatBtn, handleRepeat);
     this.keyElements.set('r-action', repeatBtn);
 
     // 2. Space / Feed button (widest center key)
@@ -122,11 +144,12 @@ export class KeyboardMapHelper {
     spaceBtn.dataset.key = ' ';
     spaceBtn.innerHTML = '<span class="kb-icon">🥕</span><span class="kb-label">Nakarm / Spacja</span>';
     spaceBtn.setAttribute('aria-label', 'Spacja - nakarm zwierzaka lub losuj kolejne');
-    spaceBtn.addEventListener('pointerdown', (e) => {
+    const handleSpace = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey(' ');
-    });
+    };
+    bindPress(spaceBtn, handleSpace);
     this.keyElements.set(' ', spaceBtn);
 
     // 3. Backspace button (for spelling mode)
@@ -136,11 +159,12 @@ export class KeyboardMapHelper {
     backspaceBtn.dataset.key = 'Backspace';
     backspaceBtn.innerHTML = '<span class="kb-icon">⌫</span><span class="kb-label">Usuń</span>';
     backspaceBtn.setAttribute('aria-label', 'Cofnij literę');
-    backspaceBtn.addEventListener('pointerdown', (e) => {
+    const handleBackspace = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey('Backspace');
-    });
+    };
+    bindPress(backspaceBtn, handleBackspace);
     this.keyElements.set('backspace', backspaceBtn);
 
     // 4. System keyboard toggle button (IME)
@@ -150,11 +174,12 @@ export class KeyboardMapHelper {
     imeBtn.dataset.key = 'SystemIME';
     imeBtn.innerHTML = '<span class="kb-icon">⌨️</span><span class="kb-label">Systemowa</span>';
     imeBtn.setAttribute('aria-label', 'Otwórz systemową klawiaturę Androida');
-    imeBtn.addEventListener('pointerdown', (e) => {
+    const handleIme = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.triggerKey('SystemIME');
-    });
+    };
+    bindPress(imeBtn, handleIme);
 
     // 5. Hide / Collapse button
     const collapseBtn = document.createElement('button');
@@ -163,11 +188,12 @@ export class KeyboardMapHelper {
     collapseBtn.dataset.key = 'ToggleCollapse';
     collapseBtn.innerHTML = '<span class="kb-icon">✕</span>';
     collapseBtn.setAttribute('aria-label', 'Schowaj klawiaturę');
-    collapseBtn.addEventListener('pointerdown', (e) => {
+    const handleCollapse = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.toggleCollapsed();
-    });
+    };
+    bindPress(collapseBtn, handleCollapse);
 
     actionRow.appendChild(repeatBtn);
     actionRow.appendChild(spaceBtn);

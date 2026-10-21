@@ -58,7 +58,7 @@ W wersji na telefony i tablety aplikacja wyposażona jest w dedykowaną, dotykow
 - **Przycisk 🥕 Nakarm / Spacja**: największy centralny przycisk dolnego paska wyzwalający rzucanie przysmaków i losowanie kolejnego zwierzaka.
 - **Przycisk 🔊 Powtórz**: natychmiast odtwarza wymowę lektora lub odgłos zwierzaka.
 - **Przycisk ⌫ Usuń**: pozwala dziecku cofnąć błędną literę podczas nauki pisania słów.
-- **Wsparcie dla klawiatury systemowej (⌨️ Systemowa)**: możliwość płynnego przełączenia na domyślną klawiaturę Androida (np. Gboard) z dyktowaniem głosowym.
+- **Wsparcie dla klawiatury systemowej (⌨️ Klawiatura systemowa / wysuwalna)**: możliwość wysunięcia pełnej klawiatury systemowej Androida (np. Gboard z dyktowaniem głosowym na telefonie lub ekranowej klawiatury Leanback IME na Android TV) za pomocą przycisku lub pola wprowadzania. Klawiatura pozostaje wysunięta podczas wpisywania kolejnych liter.
 - **Przycisk ✕ Schowaj / Pokaż**: umożliwia ukrycie klawiatury jednym dotknięciem, aby podziwiać ilustrację zwierzątka na pełnym ekranie.
 - **Odpowiedź haptyczna i dźwiękowa**: każde dotknięcie klawisza wyzwala przyjemny dźwięk bąbelka (`playKeyClick()`) oraz delikatną wibrację telefonu.
 

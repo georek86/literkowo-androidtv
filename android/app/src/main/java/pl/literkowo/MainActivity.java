@@ -2,12 +2,22 @@ package pl.literkowo;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -15,6 +25,76 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    // Track whether the system IME is currently visible to avoid hideSystemUI() loop
+    private boolean imeVisible = false;
+
+    /** Returns true if the soft keyboard is currently active (accepting input). */
+    private boolean isImeActive() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        return imm != null && imm.isActive();
+    }
+
+    public class AndroidBridge {
+        @JavascriptInterface
+        public void showSystemKeyboard() {
+            mainHandler.post(() -> {
+                if (webView == null) return;
+                // Step 1: focus the editable input inside WebView so Android WebView
+                // knows which element owns the IME connection.
+                webView.evaluateJavascript(
+                    "(function(){" +
+                    "  var el=document.getElementById('system-ime-input');" +
+                    "  if(el){el.focus();el.click();}" +
+                    "})()", null);
+                // Step 2: after WebView has processed the focus event, force-show IME.
+                // Two attempts with different delays to handle slow WebView scheduling.
+                mainHandler.postDelayed(() -> forceShowIme(), 120);
+                mainHandler.postDelayed(() -> forceShowIme(), 400);
+            });
+        }
+
+        private void forceShowIme() {
+            if (webView == null) return;
+            webView.requestFocus();
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                // Refresh the IME connection after the DOM/input focus change,
+                // then request the keyboard for the view that owns it.
+                imm.restartInput(webView);
+                imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+            }
+        }
+
+        @JavascriptInterface
+        public void hideSystemKeyboard() {
+            mainHandler.post(() -> {
+                if (webView != null) {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
+                    }
+                    // Restore immersive mode now that IME is gone
+                    mainHandler.postDelayed(() -> hideSystemUI(), 200);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void toggleSystemKeyboard() {
+            mainHandler.post(() -> {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean isAndroidApp() {
+            return true;
+        }
+    }
 
     @Override
     @SuppressLint("SetJavaScriptEnabled")
@@ -27,6 +107,9 @@ public class MainActivity extends Activity {
         // Fullscreen window feature
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+        // Allow webview to adjust resize when soft keyboard appears
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webview);
@@ -45,8 +128,19 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+        // Keep CSS pixels independent of the system font-size setting, so the
+        // keyboard/dock layout matches the physical resolution on every phone.
+        settings.setTextZoom(100);
+
+        // Viewport scaling: useWideViewPort allows viewport meta tag, overviewMode false ensures 1:1 CSS scaling
         settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
+        settings.setLoadWithOverviewMode(false);
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+
+        webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient());
@@ -54,27 +148,109 @@ public class MainActivity extends Activity {
         // Hardware acceleration
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
+        // Detect IME open/close via layout height change
+        webView.post(() -> installImeDetector());
+
         // Load offline local assets
         webView.loadUrl("file:///android_asset/index.html");
     }
 
     private void hideSystemUI() {
         View decorView = getWindow().getDecorView();
+        // Note: HIDE_NAVIGATION is intentionally omitted — it conflicts with adjustResize
+        // and blocks the soft keyboard from resizing the window on many devices.
         decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
         );
+    }
+
+    /** Notifies the web app (and CSS) when the system IME becomes visible. */
+    private void setImeVisible(boolean visible) {
+        if (visible == imeVisible) return;
+        imeVisible = visible;
+        if (webView != null) {
+            final String js =
+                "document.body.classList." + (visible ? "add" : "remove") + "('ime-open');" +
+                "window.dispatchEvent(new CustomEvent('ime-" + (visible ? "show" : "hide") + "'));";
+            webView.evaluateJavascript(js, null);
+        }
+        if (!visible) {
+            // IME closed — restore immersive mode after the window settles.
+            mainHandler.postDelayed(this::hideSystemUI, 150);
+        }
+    }
+
+    /**
+     * Detect IME open/close from real window insets (API 30+) or from the
+     * visible display frame (older WebViews). The previous implementation
+     * compared a view with its own root, so the height difference was always
+     * zero and the JS never learned that the keyboard was on screen.
+     */
+    private void installImeDetector() {
+        final View decorView = getWindow().getDecorView();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            decorView.setOnApplyWindowInsetsListener((view, insets) -> {
+                setImeVisible(insets.isVisible(WindowInsets.Type.ime()));
+                return view.onApplyWindowInsets(insets);
+            });
+            decorView.requestApplyInsets();
+            return;
+        }
+
+        final View rootView = decorView.getRootView();
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            Rect visibleFrame = new Rect();
+            decorView.getWindowVisibleDisplayFrame(visibleFrame);
+            int screenHeight = rootView.getHeight();
+            int visibleHeight = Math.max(0, visibleFrame.bottom - visibleFrame.top);
+            int heightDiff = screenHeight - visibleHeight;
+            // Ignore navigation/status bars; only a keyboard-sized gap counts.
+            boolean nowVisible = heightDiff > Math.max(150, (int) (screenHeight * 0.15));
+            setImeVisible(nowVisible);
+        });
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Rotation / keyboard resize: re-apply immersive flags (but never while
+        // the IME is visible — that can dismiss the keyboard) and let the
+        // WebView recompute its viewport (width=device-width, 1:1 CSS pixels).
+        if (!imeVisible) hideSystemUI();
+        if (webView != null) {
+            webView.requestLayout();
+            if (!imeVisible) {
+                webView.evaluateJavascript(
+                    "window.dispatchEvent(new Event('resize'));", null);
+            }
+        }
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
+        if (hasFocus && !imeVisible) {
+            // Only re-apply immersive mode if the keyboard is NOT open.
+            // If we call hideSystemUI() while IME is visible, some devices
+            // dismiss the keyboard and re-trigger a focus-change loop.
             hideSystemUI();
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView != null) {
+            webView.evaluateJavascript(
+                "(function() {" +
+                "  const ev = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true });" +
+                "  window.dispatchEvent(ev);" +
+                "})()", null);
+        } else {
+            super.onBackPressed();
         }
     }
 
@@ -85,19 +261,6 @@ public class MainActivity extends Activity {
             event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN ||
             event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_MUTE) {
             return super.dispatchKeyEvent(event);
-        }
-
-        // On Back button (KEYCODE_BACK), send an Escape key event to the web app
-        // so it triggers pause or navigates back inside the app instead of closing immediately.
-        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
-            if (event.getAction() == KeyEvent.ACTION_UP) {
-                webView.evaluateJavascript(
-                    "(function() {" +
-                    "  const ev = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true });" +
-                    "  window.dispatchEvent(ev);" +
-                    "})()", null);
-            }
-            return true;
         }
 
         return super.dispatchKeyEvent(event);
