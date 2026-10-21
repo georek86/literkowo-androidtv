@@ -23,7 +23,9 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
+import androidx.webkit.WebViewAssetLoader;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -145,12 +147,21 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
 
         webView.setWebChromeClient(new WebChromeClient());
+        // ES modules cannot load from file:// (opaque origin => CORS error, no JS runs at all),
+        // so serve the bundled assets from a virtual https origin instead.
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                // Keep the app on its local assets; open external links (e.g. WHO) in the system browser.
-                String url = request.getUrl().toString();
-                if (url.startsWith("file:///android_asset/")) return false;
+                // Keep the app on its bundled assets; open external links (e.g. WHO) in the system browser.
+                if ("appassets.androidplatform.net".equals(request.getUrl().getHost())) return false;
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
                 } catch (Exception ignored) { }
@@ -165,7 +176,7 @@ public class MainActivity extends Activity {
         webView.post(() -> installImeDetector());
 
         // Load offline local assets
-        webView.loadUrl("file:///android_asset/index.html");
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
     }
 
     private void hideSystemUI() {
