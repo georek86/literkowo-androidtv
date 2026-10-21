@@ -150,6 +150,16 @@ export function openSystemKeyboard() {
   }
   if (window.AndroidBridge?.showSystemKeyboard) {
     try { window.AndroidBridge.showSystemKeyboard(); } catch {}
+    // Retry: AndroidBridge.showSystemKeyboard calls evaluateJavascript internally
+    // and needs two passes with a delay to guarantee IME appears on all WebView versions.
+    setTimeout(() => {
+      if (document.activeElement !== systemImeInput && systemImeInput) {
+        systemImeInput.focus();
+      }
+      if (window.AndroidBridge?.showSystemKeyboard) {
+        try { window.AndroidBridge.showSystemKeyboard(); } catch {}
+      }
+    }, 500);
   }
 }
 
@@ -161,6 +171,18 @@ export function hideSystemKeyboard() {
     try { window.AndroidBridge.hideSystemKeyboard(); } catch {}
   }
 }
+
+// Native IME open/close events dispatched by installImeDetector() in MainActivity
+window.addEventListener('ime-show', () => {
+  keyboardDockEl?.classList.add('ime-open');
+  // Ensure the dock is scrolled into view when IME pushes layout up
+  if (systemImeInput && document.activeElement !== systemImeInput) {
+    systemImeInput.focus({ preventScroll: false });
+  }
+});
+window.addEventListener('ime-hide', () => {
+  keyboardDockEl?.classList.remove('ime-open');
+});
 const hasKeyboardLock = Boolean(navigator.keyboard?.lock);
 
 // Touch-first devices start in a window without requiring keyboard protection.
@@ -1260,6 +1282,11 @@ if (systemImeInput) {
   systemImeInput.addEventListener('blur', () => {
     setTimeout(() => {
       keyboardDockEl?.classList.remove('ime-focused');
+      // On Android, if the input loses focus but IME is still marked open,
+      // quietly re-focus it so characters keep flowing into the game.
+      if (keyboardDockEl?.classList.contains('ime-open') && phase === 'playing') {
+        systemImeInput.focus({ preventScroll: true });
+      }
     }, 200);
   });
 
