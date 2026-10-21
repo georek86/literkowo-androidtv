@@ -10,7 +10,7 @@ import { MemoryGame } from '../memory-game.js';
 import { hasAnimalSound, playAnimalSound } from '../animal-sounds.js';
 import { splitIntoSyllables, getSyllablesForAnimal, ANIMAL_SYLLABLES } from '../syllables.js';
 import { getFoodForAnimal } from '../animal-feed.js';
-import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, playMunch, playMagicReveal } from '../sfx.js';
+import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, playMunch, playMagicReveal, playKeyClick } from '../sfx.js';
 
 test('QuizEngine switches modes and formats questions properly', () => {
   const engine = new QuizEngine(animals);
@@ -195,6 +195,7 @@ test('SFX functions execute safely in non-browser / headless contexts', () => {
     playCardUnlock();
     playMunch();
     playMagicReveal();
+    playKeyClick();
   });
 });
 
@@ -207,11 +208,32 @@ test('Phonics dictionary covers Polish letters and provides distinctive sounds',
   assert.equal(POLISH_ALPHABET_NAMES['ż'], 'Żet');
 });
 
-test('KeyboardMapHelper operates safely in headless environments', () => {
-  const helper = new KeyboardMapHelper(null);
+test('KeyboardMapHelper operates safely and triggers interactive software keys', () => {
+  let pressedKey = null;
+  let collapsedState = null;
+  const helper = new KeyboardMapHelper(null, {
+    onKeyPress: (k) => { pressedKey = k; },
+    onCollapseChange: (c) => { collapsedState = c; }
+  });
   assert.equal(helper.enabled, true);
+  assert.equal(helper.collapsed, false);
   helper.setEnabled(false);
   assert.equal(helper.enabled, false);
+  helper.setEnabled(true);
+
+  helper.setCollapsed(true);
+  assert.equal(helper.collapsed, true);
+  assert.equal(collapsedState, true);
+  helper.toggleCollapsed();
+  assert.equal(helper.collapsed, false);
+  assert.equal(collapsedState, false);
+
+  helper.triggerKey('K');
+  assert.equal(pressedKey, 'K');
+
+  helper.triggerKey(' ');
+  assert.equal(pressedKey, ' ');
+
   assert.doesNotThrow(() => {
     helper.highlightTarget('A');
     helper.clearTarget();

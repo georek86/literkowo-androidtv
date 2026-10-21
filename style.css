@@ -626,56 +626,193 @@ body.night-mode .card-title {
   color: #e6ebdd !important;
 }
 
-/* Keyboard Map Visual Helper */
+/* Keyboard Map & Software Keyboard for Android Mobile and TV */
 .keyboard-map-container {
-  margin-top: 14px;
-  width: 95%;
-  max-width: 500px;
+  margin-top: 10px;
+  width: 96%;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  z-index: 2;
+  gap: 3px;
+  z-index: 10;
   user-select: none;
+  touch-action: manipulation;
+  transition: max-height 0.28s ease, opacity 0.25s ease, transform 0.25s ease;
+}
+.keyboard-map-container.collapsed {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transform: translateY(12px);
+  margin-top: 0;
+  margin-bottom: 0;
 }
 .kb-row {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   justify-content: center;
+  width: 100%;
 }
 .kb-key {
   font-family: inherit;
-  font-size: 11px;
+  font-size: clamp(10px, 2.7vw, 13px);
   font-weight: bold;
-  width: 27px;
-  height: 27px;
-  border-radius: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 38px;
+  height: 32px;
+  border-radius: 7px;
   background: #fffdf8;
   border: 1px solid #cad2c2;
-  color: #53634e;
-  display: grid;
-  place-items: center;
-  transition: all .15s ease;
+  border-bottom: 2px solid #b1bda6;
+  color: #445940;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all .12s ease;
+  user-select: none;
+  padding: 0;
 }
-body.night-mode .kb-key {
-  background: #2a3c45;
-  border-color: #3f5560;
-  color: #cdd9ce;
+.kb-key:active, .kb-key.pressed-key {
+  background: #50694e !important;
+  color: #fff !important;
+  transform: translateY(2px) scale(0.96);
+  border-bottom-width: 1px !important;
+  box-shadow: none !important;
 }
 .kb-key.target-key {
   background: #b37c46 !important;
   color: #fff !important;
-  transform: scale(1.22);
-  box-shadow: 0 0 10px rgba(179, 124, 70, 0.7);
-  animation: kb-pulse 0.9s infinite alternate;
+  transform: scale(1.18);
+  box-shadow: 0 0 12px rgba(179, 124, 70, 0.85);
+  z-index: 3;
+  animation: kb-pulse 0.85s infinite alternate;
 }
-.kb-key.pressed-key {
-  background: #50694e !important;
-  color: #fff !important;
-  transform: scale(1.15);
+.kb-action-row {
+  margin-top: 3px;
+  gap: 4px;
+}
+.kb-key-action {
+  max-width: none;
+  height: 34px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  gap: 4px;
+}
+.kb-key-action .kb-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+.kb-key-action .kb-label {
+  font-size: 10.5px;
+}
+.kb-key-space {
+  flex: 3 1 0;
+  background: #edf4e6;
+  border-color: #b9caa9;
+  border-bottom: 2px solid #9caf88;
+  color: #375333;
+}
+.kb-key-repeat {
+  flex: 1.3 1 0;
+  background: #fcf4e8;
+  border-color: #dec8ad;
+  border-bottom: 2px solid #c3a887;
+  color: #6e4d25;
+}
+.kb-key-backspace {
+  flex: 1.1 1 0;
+  background: #faeeee;
+  border-color: #e2c2c2;
+  border-bottom: 2px solid #c99e9e;
+  color: #793434;
+}
+.kb-key-ime {
+  flex: 1.2 1 0;
+  background: #eff3f9;
+  border-color: #bfcbde;
+  border-bottom: 2px solid #9eb0cb;
+  color: #314a70;
+}
+.kb-key-collapse {
+  flex: 0.6 1 0;
+  max-width: 32px;
+  background: #f2f4ec;
+  border-color: #cbd4be;
+  border-bottom: 2px solid #b2bda2;
+  color: #5c6854;
+  font-size: 12px;
+}
+
+.btn-toggle-keyboard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e3ebda;
+  border: 1px solid #bfccb4;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #435b3e;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  transition: all .2s ease;
+  margin-top: 8px;
+  z-index: 5;
+}
+.btn-toggle-keyboard:hover {
+  background: #d4decb;
+}
+.btn-toggle-keyboard:active {
+  transform: scale(0.96);
+}
+
+body.night-mode .kb-key {
+  background: #2a3c45;
+  border-color: #3f5560;
+  border-bottom-color: #2b3d46;
+  color: #cdd9ce;
+}
+body.night-mode .kb-key-space {
+  background: #334c44;
+  border-color: #46675d;
+  color: #d1e7dc;
+}
+body.night-mode .kb-key-repeat {
+  background: #463d33;
+  border-color: #625648;
+  color: #f1dfc9;
+}
+body.night-mode .kb-key-backspace {
+  background: #4a3636;
+  border-color: #684c4c;
+  color: #fad1d1;
+}
+body.night-mode .kb-key-ime {
+  background: #344052;
+  border-color: #495a73;
+  color: #d5e2f7;
+}
+body.night-mode .kb-key-collapse {
+  background: #2b3a42;
+  border-color: #3e515c;
+  color: #abbac1;
+}
+body.night-mode .btn-toggle-keyboard {
+  background: #2a3d46;
+  border-color: #3e5561;
+  color: #c8d9de;
 }
 @keyframes kb-pulse {
-  from { transform: scale(1.15); }
-  to { transform: scale(1.28); }
+  from { transform: scale(1.14); }
+  to { transform: scale(1.24); }
 }
 
 /* Memory Game Board & Cards */

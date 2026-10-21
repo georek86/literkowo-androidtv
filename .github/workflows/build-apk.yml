@@ -1,4 +1,4 @@
-name: Build Android TV APK
+name: Build Android APK (Mobile & TV)
 
 on:
   push:
@@ -31,35 +31,57 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp index.html style.css app.js animals.js gaze.js animal-art.js animals-extended.js animals-more.js habitats.js play-state.js keyboard-protection.js quiz-engine.js collection.js animal-facts.js sfx.js phonics.js keyboard-map.js memory-game.js animal-sounds.js syllables.js animal-feed.js manifest.webmanifest icon.svg android/app/src/main/assets/
 
-      - name: Build Android APK
+      - name: Build Android APKs
         working-directory: android
         run: |
           gradle assembleRelease --stacktrace
 
-      - name: Prepare APK file
+      - name: Prepare APK files
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk literkowo-tv.apk
+          cp android/app/build/outputs/apk/mobile/release/app-mobile-release.apk literkowo.apk
+          cp android/app/build/outputs/apk/mobile/release/app-mobile-release.apk literkowo-mobile.apk
+          cp android/app/build/outputs/apk/tv/release/app-tv-release.apk literkowo-tv.apk
 
-      - name: Upload APK Artifact
+      - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: literkowo-tv-apk
-          path: literkowo-tv.apk
+          name: literkowo-apks
+          path: |
+            literkowo.apk
+            literkowo-mobile.apk
+            literkowo-tv.apk
 
-      - name: Publish GitHub Release with APK
+      - name: Publish GitHub Release with APKs
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.0-tv
-          name: Literkowo TV v1.0.0 (Android TV APK)
+          tag_name: v1.0.0
+          name: Literkowo v1.0.0 (Android & Android TV)
           body: |
-            ### Literkowo na Android TV (APK)
+            ### Literkowo na Androida (Smartfony, Tablety i Android TV)
             
-            Plik instalacyjny APK zoptymalizowany dla dekoderów i telewizorów z systemem **Android TV** z obsługą klawiatury fizycznej.
+            Gotowe pliki instalacyjne APK (100% offline, brak mikropłatności, bezpieczne dla dzieci):
             
-            #### Jak zainstalować:
-            1. Pobierz plik `literkowo-tv.apk` poniżej.
-            2. Przegraj plik na pendrive USB i podłącz do dekodera Android TV (lub prześlij bezprzewodowo za pomocą aplikacji *Send Files to TV*).
-            3. Na dekoderze otwórz menedżer plików (np. *X-plore* lub *AnExplorer*) i zainstaluj plik APK.
-            4. Aplikacja pojawi się na ekranie głównym Android TV (w kafelkach aplikacji).
-          files: literkowo-tv.apk
+            1. 📱 **`literkowo.apk` / `literkowo-mobile.apk` (dla zwykłego Androida — smartfony i tablety)**:
+               - Pełna obsługa dotykowa.
+               - Wbudowana, kolorowa **klawiatura software'owa (ekranowa)** z dużymi polskimi literami (A–Z, Ą, Ć, Ę, Ł, Ń, Ó, Ś, Ź, Ż).
+               - Klawisz karmienia zwierzaka 🥕, powtarzania dźwięku 🔊 oraz cofania ⌫.
+               - Opcjonalne wsparcie dla systemowej klawiatury Androida (Gboard).
+            
+            2. 📺 **`literkowo-tv.apk` (dla Android TV — telewizory i dekodery)**:
+               - Interfejs **10-foot UI** zoptymalizowany pod oglądanie z kanapy.
+               - Sterowanie za pomocą **fizycznej klawiatury komputerowej** (USB/Bluetooth) lub pilota TV.
+               - Zabezpieczenie przed przypadkowymi klawiszami systemowymi i bramka rodzicielska.
+            
+            #### Jak zainstalować na telefonie lub tablecie:
+            1. Pobierz plik `literkowo.apk` bezpośrednio w przeglądarce telefonu/tabletu.
+            2. Otwórz pobrany plik i potwierdź instalację.
+            
+            #### Jak zainstalować na Android TV:
+            1. Pobierz plik `literkowo-tv.apk`.
+            2. Skopiuj na pendrive USB i podłącz do telewizora/dekodera (lub prześlij bezprzewodowo za pomocą aplikacji *Send Files to TV*).
+            3. Zainstaluj za pomocą menedżera plików (np. *X-plore* lub *AnExplorer*).
+          files: |
+            literkowo.apk
+            literkowo-mobile.apk
+            literkowo-tv.apk

@@ -6,7 +6,7 @@ import { acquireKeyboardProtection } from './keyboard-protection.js';
 import { QuizEngine } from './quiz-engine.js';
 import { CollectionManager } from './collection.js';
 import { getFactForAnimal } from './animal-facts.js';
-import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, playMunch, playMagicReveal, setSoundEnabled } from './sfx.js';
+import { playCorrect, playStar, playFanfare, playTryAgain, playClick, playCardUnlock, playMunch, playMagicReveal, playKeyClick, setSoundEnabled } from './sfx.js';
 import { KeyboardMapHelper } from './keyboard-map.js';
 import { MemoryGame } from './memory-game.js';
 import { hasAnimalSound, playAnimalSound } from './animal-sounds.js';
@@ -88,6 +88,8 @@ const profileNameEl = $('profile-name');
 const nightBtn = $('night-btn');
 const memoryBoardEl = $('memory-board');
 const keyboardMapContainer = $('keyboard-map-container');
+const btnToggleKeyboard = $('btn-toggle-keyboard');
+const systemImeInput = $('system-ime-input');
 const settingProfileSelect = $('setting-profile');
 const settingChildNameInput = $('setting-child-name');
 const settingPhonicsSelect = $('setting-phonics');
@@ -96,7 +98,15 @@ const settingNightMode = $('setting-night-mode');
 
 const collection = new CollectionManager(animals);
 const quizEngine = new QuizEngine(animals);
-const keyboardHelper = new KeyboardMapHelper(keyboardMapContainer);
+const keyboardHelper = new KeyboardMapHelper(keyboardMapContainer, {
+  onKeyPress: (key) => handleSoftwareKey(key),
+  onCollapseChange: (collapsed) => {
+    if (btnToggleKeyboard) {
+      const txt = btnToggleKeyboard.querySelector('#toggle-kb-text');
+      if (txt) txt.textContent = collapsed ? 'Klawiatura' : 'Schowaj';
+    }
+  }
+});
 const memoryGame = new MemoryGame();
 let selectedCardAnimal = null;
 
@@ -717,6 +727,85 @@ function handleQuizInput(key) {
   }
 }
 
+function handleSoftwareKey(key) {
+  playKeyClick();
+  if (navigator.vibrate) {
+    try { navigator.vibrate(20); } catch {}
+  }
+
+  if (key === 'SystemIME') {
+    if (systemImeInput) {
+      systemImeInput.focus();
+      systemImeInput.click();
+    }
+    return;
+  }
+
+  if (key === 'ToggleCollapse') {
+    keyboardHelper.toggleCollapsed();
+    return;
+  }
+
+  if (phase === 'welcome') {
+    if (key === ' ' || key === 'Enter') {
+      begin();
+    }
+    return;
+  }
+
+  if (phase !== 'playing') return;
+
+  if (key === 'Escape') {
+    pause();
+    return;
+  }
+
+  if (key === ' ') {
+    if (quizEngine.mode === 'explore') {
+      feedCurrentAnimal();
+    }
+    return;
+  }
+
+  if (key === 'r' || key === 'R') {
+    if (quizEngine.mode === 'sound' && quizEngine.currentQuestion?.animal) {
+      playAnimalSound(quizEngine.currentQuestion.animal);
+    } else if (currentAnimal) {
+      speak(currentAnimal);
+    }
+    return;
+  }
+
+  if (key === 'Backspace') {
+    if (quizEngine.mode === 'spelling' && quizEngine.currentQuestion) {
+      quizEngine.currentQuestion.stepIndex = 0;
+      renderSpellingSlots(quizEngine.currentQuestion);
+      const nextChar = quizEngine.currentQuestion.letters?.[0];
+      keyboardHelper.highlightTarget(nextChar);
+      speakText('Spróbuj jeszcze raz');
+    }
+    return;
+  }
+
+  if (quizEngine.mode === 'memory') {
+    const normKey = key.toLowerCase();
+    const memoryCards = Array.from(memoryBoardEl?.querySelectorAll('.memory-card') || []);
+    const faceDownCard = memoryCards.find(c => c.classList.contains('back') && (c.dataset.letter === normKey || c.dataset.key === normKey));
+    if (faceDownCard) {
+      faceDownCard.focus();
+      faceDownCard.click();
+    }
+    return;
+  }
+
+  if (quizEngine.mode !== 'explore') {
+    handleQuizInput(key);
+    return;
+  }
+
+  discoverAnimal(key);
+}
+
 function openCardsAlbum() {
   renderCardsGrid();
   cardsDialog.showModal();
@@ -926,6 +1015,7 @@ async function begin(resuming = false) {
   parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
   document.body.classList.add('playing');
   phase = 'playing';
+  if (btnToggleKeyboard) btnToggleKeyboard.hidden = !keyboardHelper.enabled;
   state.start();
   startClock();
   startButton.disabled = false;
@@ -939,6 +1029,7 @@ async function begin(resuming = false) {
 
 function pause() {
   if (phase !== 'playing') return;
+  if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   remaining = Math.max(0, endAt - performance.now());
   if (remaining === 0) { finish(); return; }
   phase = 'paused';
@@ -958,6 +1049,7 @@ function pause() {
 
 function finish() {
   if (!['playing', 'paused'].includes(phase)) return;
+  if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   phase = 'finished';
   state.stop();
   clearTimeout(sessionTimer);
@@ -988,6 +1080,7 @@ stopButton.addEventListener('click', returnToWelcome);
 
 function returnToWelcome() {
   phase = 'welcome';
+  if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   state.stop();
   clearTimeout(sessionTimer);
   clearInterval(clockTimer);
@@ -1080,7 +1173,32 @@ settingPhonicsSelect?.addEventListener('change', () => {
 settingKeyboardHint?.addEventListener('change', () => {
   collection.setKeyboardHint(settingKeyboardHint.checked);
   keyboardHelper.setEnabled(settingKeyboardHint.checked);
+  if (btnToggleKeyboard) {
+    btnToggleKeyboard.hidden = phase !== 'playing' || !settingKeyboardHint.checked;
+  }
 });
+
+btnToggleKeyboard?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  keyboardHelper.toggleCollapsed();
+});
+
+if (systemImeInput) {
+  systemImeInput.addEventListener('input', () => {
+    const val = systemImeInput.value;
+    systemImeInput.value = '';
+    if (val) {
+      const char = val[val.length - 1];
+      handleSoftwareKey(char);
+    }
+  });
+  systemImeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' || e.key === 'Enter') {
+      handleSoftwareKey(e.key);
+    }
+  });
+}
 
 settingNightMode?.addEventListener('change', () => {
   applyNightMode(settingNightMode.checked);
@@ -1591,6 +1709,7 @@ for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type,
 }, { capture: true, passive: true });
 document.querySelector('main').addEventListener('pointerdown', event => {
   if (phase === 'playing') {
+    if (event.target.closest('#keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
     event.preventDefault();
     if (event.isPrimary && event.button === 0) discoverAnimal(' ');
   }

@@ -113,6 +113,9 @@
         <span class="celebration-text" id="celebration-text">Brawo!</span>
       </div>
       <div class="keyboard-map-container" id="keyboard-map-container" aria-hidden="true"></div>
+      <button type="button" class="btn-toggle-keyboard" id="btn-toggle-keyboard" aria-label="Pokaż lub schowaj klawiaturę ekranową" hidden>
+        <span aria-hidden="true">⌨️</span> <span id="toggle-kb-text">Klawiatura</span>
+      </button>
       <div class="readiness" id="readiness" role="progressbar" aria-label="Gotowość na kolejne zwierzątko" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" hidden>
         <svg viewBox="0 0 28 28" aria-hidden="true"><circle class="readiness-track" cx="14" cy="14" r="10"/><circle class="readiness-fill" id="readiness-fill" cx="14" cy="14" r="10" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg>
         <span id="readiness-label">Można dalej</span>
@@ -157,7 +160,7 @@
     <label class="setting-row" for="setting-profile"><span>Aktywny gracz (Profil rodzeństwa)<small>Osobne gwiazdki, imię i album dla każdego dziecka.</small></span><select id="setting-profile"><option value="profile_1">Gracz 1</option><option value="profile_2">Gracz 2</option></select></label>
     <label class="setting-row" for="setting-child-name"><span>Imię dziecka<small>Wpisz imię, aby pojawiało się w zadaniach literowania (np. ZOSIA, STAŚ).</small></span><input id="setting-child-name" type="text" placeholder="Imię..." maxlength="12" style="border:1px solid #cad4bd;border-radius:9px;padding:8px 12px;font:inherit;background:#f4f5eb;width:120px;"></label>
     <label class="setting-row" for="setting-phonics"><span>Wymowa liter (Metoda czytania)<small>Głoski (b, k, m) ułatwiają naukę czytania. Alfabet (be, ka, em) uczy nazw liter.</small></span><select id="setting-phonics"><option value="alphabet">Nazwy liter (alfabet)</option><option value="phonics">Głoski (nauka czytania)</option></select></label>
-    <label class="setting-row" for="setting-keyboard-hint"><span>Pomoc klawiatury na ekranie<small>Podświetla szukany klawisz na schemacie klawiatury.</small></span><input id="setting-keyboard-hint" type="checkbox" checked></label>
+    <label class="setting-row" for="setting-keyboard-hint"><span>Klawiatura na ekranie (software'owa)<small>Wyświetla dotykową klawiaturę z polskimi literami dla dzieci.</small></span><input id="setting-keyboard-hint" type="checkbox" checked></label>
     <label class="setting-row" for="setting-night-mode"><span>Tryb wieczorny<small>Ciemniejsze, ciepłe barwy nie męczące wzroku wieczorem.</small></span><input id="setting-night-mode" type="checkbox"></label>
     <label class="setting-row" for="setting-scenery"><span>Zmienna sceneria<small>Dopasowane otoczenie zwierzątka, np. las lub sawanna. Wyłącz, aby pokazywać jednolite tło.</small></span><input id="setting-scenery" type="checkbox" checked></label>
     <label class="setting-row" for="duration"><span>Czas jednej zabawy<small>Po tym czasie zwierzątka odpoczną.</small></span><select id="duration"><option value="2">2 minuty</option><option value="3" selected>3 minuty</option><option value="5">5 minut</option></select></label>
@@ -202,5 +205,6 @@
     <button class="primary-button" id="card-detail-close" type="button">Wróć do albumu</button>
   </dialog>
   <dialog id="paused" aria-labelledby="paused-title"><span class="eyebrow">MAŁA PRZERWA</span><h2 id="paused-title">Zabawa wstrzymana</h2><p>Wróćcie, kiedy będziecie gotowi.</p><p id="pause-detail"></p><button class="primary-button" id="resume" type="button">Wznów zabawę</button><button class="text-button" id="stop" type="button">Zakończ zabawę</button></dialog>
+  <input id="system-ime-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text" style="position:fixed;opacity:0;pointer-events:none;top:-100px;left:-100px;width:1px;height:1px;" aria-hidden="true" tabindex="-1">
 </body>
 </html>

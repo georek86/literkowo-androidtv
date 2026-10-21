@@ -155,3 +155,23 @@ export function playMagicReveal() {
     playTone(freq, 'triangle', idx * 0.07, 0.35, 0.18);
   });
 }
+
+// Satisfying bubble/pop key tap sound for the software keyboard
+export function playKeyClick() {
+  const ctx = getAudioContext();
+  if (!ctx || !soundEnabled) return;
+  const t = ctx.currentTime;
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(520, t);
+    osc.frequency.exponentialRampToValueAtTime(320, t + 0.035);
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.04);
+  } catch {}
+}

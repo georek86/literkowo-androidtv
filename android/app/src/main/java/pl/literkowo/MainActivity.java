@@ -1,4 +1,4 @@
-package pl.literkowo.tv;
+package pl.literkowo;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Keep TV screen awake while playing
+        // Keep screen awake while playing
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // Fullscreen window feature
@@ -32,6 +32,11 @@ public class MainActivity extends Activity {
         webView = findViewById(R.id.webview);
 
         hideSystemUI();
+
+        // Enable focus and touch input for software and hardware keyboards
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(true);
+        webView.requestFocus();
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -82,7 +87,7 @@ public class MainActivity extends Activity {
             return super.dispatchKeyEvent(event);
         }
 
-        // On TV Back button (KEYCODE_BACK), send an Escape key event to the web app
+        // On Back button (KEYCODE_BACK), send an Escape key event to the web app
         // so it triggers pause or navigates back inside the app instead of closing immediately.
         if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
             if (event.getAction() == KeyEvent.ACTION_UP) {

@@ -1,14 +1,25 @@
-# Literkowo TV
+# Literkowo & Literkowo TV
 
-<img width="1331" height="696" alt="Literkowo TV" src="https://github.com/user-attachments/assets/89dc271d-cc52-4653-9b9a-b8bc39dc1d1a" />
+<img width="1331" height="696" alt="Literkowo & Literkowo TV" src="https://github.com/user-attachments/assets/89dc271d-cc52-4653-9b9a-b8bc39dc1d1a" />
 
-**Literkowo TV** to edukacyjna, bezpłatna aplikacja dla dzieci w wieku przedszkolnym i wczesnoszkolnym (2–6 lat), zoptymalizowana specjalnie dla telewizorów i dekoderów z systemem **Android TV** sterowanych za pomocą **fizycznej klawiatury komputerowej** (USB/Bluetooth) lub pilota.
+**Literkowo** to bezpłatna, otwartoźródłowa i w 100% bezpieczna aplikacja edukacyjna dla dzieci w wieku przedszkolnym i wczesnoszkolnym (2–6 lat). Aplikacja dostępna jest w dwóch dedykowanych wersjach instalacyjnych Androida:
+
+1. 📱 **Literkowo na zwykłego Androida (Smartfony i Tablety)**:
+   - Z wbudowaną, dotykową **klawiaturą software'ową (ekranową)** z dużymi polskimi literami (`A–Z` oraz `Ą`, `Ć`, `Ę`, `Ł`, `Ń`, `Ó`, `Ś`, `Ź`, `Ż`).
+   - Przycisk karmienia zwierzaka 🥕, powtórzenia dźwięku 🔊 oraz cofania litery ⌫.
+   - Możliwość zwinięcia klawiatury w dowolnym momencie oraz opcjonalne wsparcie dla systemowej klawiatury Androida (np. Gboard).
+2. 📺 **Literkowo TV (Telewizory i Dekodery Android TV / Google TV)**:
+   - Zoptymalizowana pod interfejs **10-foot UI** (duże kafelki czytelne z odległości 3 metrów).
+   - Sterowanie za pomocą **fizycznej klawiatury komputerowej** (USB/Bluetooth) lub pilota z D-padem.
+   - Blokada przypadkowych klawiszy systemowych i bezpieczna bramka rodzicielska (`P`).
 
 Do korzystania wyłącznie wspólnie z dorosłym i pod jego stałym nadzorem.
 
-* **[Pobierz gotowy pakiet APK dla Android TV](https://github.com/georek86/literkowo-androidtv/releases/download/v1.0.0-tv/literkowo-tv.apk)**
-* **[Strona wydań (GitHub Releases)](https://github.com/georek86/literkowo-androidtv/releases/tag/v1.0.0-tv)**
-* **[Wersja przeglądarkowa online](https://georek86.github.io/literkowo-androidtv/)** · [Przegląd zwierzątek](https://georek86.github.io/literkowo-androidtv/debug.html)
+### 📥 Pobierz gotowe pakiety APK:
+* 📱 **[Pobierz APK dla smartfonów i tabletów (`literkowo.apk`)](https://github.com/georek86/literkowo-androidtv/releases/download/v1.0.0/literkowo.apk)**
+* 📺 **[Pobierz APK dla Android TV (`literkowo-tv.apk`)](https://github.com/georek86/literkowo-androidtv/releases/download/v1.0.0/literkowo-tv.apk)**
+* 🌟 **[Wszystkie wydania na GitHub Releases](https://github.com/georek86/literkowo-androidtv/releases)**
+* 🌐 **[Wersja przeglądarkowa online](https://georek86.github.io/literkowo-androidtv/)** · [Przegląd zwierzątek](https://georek86.github.io/literkowo-androidtv/debug.html)
 
 ---
 
@@ -18,56 +29,69 @@ Niniejszy projekt powstał jako rozwinięcie i fork wspaniałej, minimalistyczne
 
 Oryginalne *Literkowo* powstało jako prosta zabawa rodzica z dzieckiem przy komputerze lub tablecie, polegająca na swobodnym odkrywaniu zwierząt i reakcji na klawiaturę.
 
-### Co zmieniono i dodano w Literkowo TV:
+### Co zmieniono i dodano w Literkowo TV & Mobile:
 
-W wersji **Literkowo TV** projekt został gruntownie rozbudowany o dedykowany ekosystem edukacyjny dla telewizorów:
+W niniejszym forku projekt został gruntownie rozbudowany o wieloplatformowy ekosystem edukacyjny:
 
-| Funkcjonalność | Projekt pierwotny (Literkowo) | Literkowo TV |
-| :--- | :--- | :--- |
-| **Platforma** | Wyłącznie przeglądarka internetowa | **Aplikacja Android TV (.APK)** + PWA + Web |
-| **Liczba trybów zabawy** | 1 tryb (swobodne odkrywanie) | **8 trybów dydaktycznych** (sylaby, dźwięki, cienie, memory...) |
-| **Sterowanie na TV** | Standardowa obsługa klawiszy A-Z | **Pełny 10-foot UI, D-pad pilota, fizyczna klawiatura, podświetlenie focusu** |
-| **Metodyka czytania** | Tylko nazwa zwierzątka | **Głoskowanie (fonemy) vs alfabet** oraz **metoda sylabowa** |
-| **Interakcja ze zwierzęciem** | Animacja powitania | **Karmienie zwierzątek przysmakami (Spacja)**, serduszka, reakcje |
-| **Odgłosy zwierząt** | Brak | **Proceduralna synteza odgłosów natury (Web Audio CC0)** |
-| **Nauka i motywacja** | Brak punktacji i celów | **Album 100 kart, gwiazdki, ciekawostki przyrodnicze lektora** |
-| **Wsparcie rodzeństwa** | Jeden wspólny stan | **Wieloprofilowość (Gracz 1 i 2)** z osobnymi gwiazdkami i kartami |
-| **Personalizacja** | Brak | **Wpisywanie imienia dziecka** z dedykowaną rundą literowania |
-| **Wizualna pomoc klawiatury** | Brak | **Ekranowy schemat klawiszy** z pulsującym celem i błyskiem wciśnięcia |
-| **Ochrona wzroku** | Jasny motyw dzienny | **Tryb nocny / wieczorny (Warm Mode)** redukujący niebieskie światło |
-| **Diagnostyka postępów** | Brak | **Panel rodzica ze statystykami opanowania liter polskiego alfabetu** |
-| **Czystość licencyjna** | MIT | **100% MIT / CC0**, zero reklam, zero śledzenia, 100% offline |
+| Funkcjonalność | Projekt pierwotny (Literkowo) | Literkowo (Smartfony i Tablety) | Literkowo TV (Telewizory i Dekodery) |
+| :--- | :--- | :--- | :--- |
+| **Pakiety APK** | Brak (tylko Web) | **`literkowo.apk`** | **`literkowo-tv.apk`** |
+| **Klawiatura** | Wyłącznie fizyczna / losowy dotyk | **Dotykowa klawiatura software'owa** + IME | **Fizyczna klawiatura USB/BT** + pilot D-pad |
+| **Liczba trybów zabawy** | 1 tryb (swobodne odkrywanie) | **8 trybów dydaktycznych** | **8 trybów dydaktycznych** |
+| **Interfejs użytkownika** | Standardowy webowy | Dotykowy mobile/tablet z autoukrywaniem | **10-foot UI**, podświetlenia fokusowe |
+| **Metodyka czytania** | Tylko nazwa zwierzątka | **Głoskowanie vs alfabet** + **metoda sylabowa** | **Głoskowanie vs alfabet** + **metoda sylabowa** |
+| **Karmienie zwierzątek** | Brak | **Przycisk 🥕 Nakarm**, serduszka, chrupanie | **Klawisz Spacja**, serduszka, chrupanie |
+| **Odgłosy zwierząt** | Brak | **Synteza Web Audio (CC0)** | **Synteza Web Audio (CC0)** |
+| **System nagród i album** | Brak | **100 kart, ciekawostki, gwiazdki** | **100 kart, ciekawostki, gwiazdki** |
+| **Wsparcie rodzeństwa** | Jeden wspólny stan | **Wieloprofilowość (Gracz 1 i 2)** | **Wieloprofilowość (Gracz 1 i 2)** |
+| **Personalizacja** | Brak | **Wpisywanie imienia dziecka do zadań** | **Wpisywanie imienia dziecka do zadań** |
+| **Ochrona wzroku** | Jasny motyw | **Tryb wieczorny (Warm Night Mode)** | **Tryb wieczorny (Warm Night Mode)** |
+| **Statystyki dla rodzica** | Brak | **Siatka opanowania liter alfabetu** | **Siatka opanowania liter alfabetu** |
+| **Licencja** | MIT | **100% MIT / CC0**, brak mikropłatności | **100% MIT / CC0**, brak mikropłatności |
+
+---
+
+## 📱 Dotykowa klawiatura software'owa (ekranowa)
+
+W wersji na telefony i tablety aplikacja wyposażona jest w dedykowaną, dotykową **klawiaturę software'ową**:
+- **Duże, kolorowe kafelki**: zaprojektowane specjalnie dla małych dłoni dziecka, z zachowaniem polskich znaków diakrytycznych (`Ą`, `Ć`, `Ę`, `Ł`, `Ń`, `Ó`, `Ś`, `Ź`, `Ż`).
+- **Przycisk 🥕 Nakarm / Spacja**: największy centralny przycisk dolnego paska wyzwalający rzucanie przysmaków i losowanie kolejnego zwierzaka.
+- **Przycisk 🔊 Powtórz**: natychmiast odtwarza wymowę lektora lub odgłos zwierzaka.
+- **Przycisk ⌫ Usuń**: pozwala dziecku cofnąć błędną literę podczas nauki pisania słów.
+- **Wsparcie dla klawiatury systemowej (⌨️ Systemowa)**: możliwość płynnego przełączenia na domyślną klawiaturę Androida (np. Gboard) z dyktowaniem głosowym.
+- **Przycisk ✕ Schowaj / Pokaż**: umożliwia ukrycie klawiatury jednym dotknięciem, aby podziwiać ilustrację zwierzątka na pełnym ekranie.
+- **Odpowiedź haptyczna i dźwiękowa**: każde dotknięcie klawisza wyzwala przyjemny dźwięk bąbelka (`playKeyClick()`) oraz delikatną wibrację telefonu.
 
 ---
 
 ## 8 Trybów zabawy i nauki
 
-Wybór trybu jest dostępny bezpośrednio na ekranie startowym (z pełną nawigacją strzałkami D-pad):
+Wybór trybu jest dostępny bezpośrednio na ekranie startowym (z pełną nawigacją dotykową lub strzałkami D-pad):
 
 1. 🐾 **Poznawanie (Swobodne odkrywanie)**:
-   - Dziecko naciska dowolny klawisz na fizycznej klawiaturze. Na ekranie pojawia się dopasowane zwierzątko, lektor wymawia jego nazwę, a z głośników rozbrzmiewa autentyczny odgłos zwierzątka.
-   - Wciśnięcie **Spacji** rzuca zwierzakowi jego ulubiony przysmak!
+   - Dziecko wybiera dowolną literę na klawiaturze. Na ekranie pojawia się dopasowane zwierzątko, lektor wymawia jego nazwę, a z głośników rozbrzmiewa autentyczny odgłos zwierzątka.
+   - Wciśnięcie przycisku **🥕 Nakarm** rzuca zwierzakowi jego ulubiony przysmak!
 2. 🎯 **Zgadnij literkę**:
-   - Lektor pyta ze słuchu: *„Gdzie jest literka M?”* (lub *„Gdzie jest głoska M?”*). Dziecko odnajduje klawisz na klawiaturze fizycznej lub wskazuje kafelek pilotem.
+   - Lektor pyta ze słuchu: *„Gdzie jest literka M?”* (lub *„Gdzie jest głoska M?”*). Dziecko odnajduje klawisz na klawiaturze programowej lub wskazuje kafelek.
 3. 🔤 **Pierwsza litera**:
    - Na ekranie pojawia się zwierzątko. Zadaniem dziecka jest odgadnięcie, na jaką literę zaczyna się jego nazwa (np. *Pies* $\rightarrow$ `P`).
 4. ✏️ **Napisz słowo (Literowanie)**:
    - Dziecko układa krótkie słowa (np. K-O-T, P-I-E-S) litera po literze w klockach na ekranie.
    - **Personalizacja imienia**: Jeśli w ustawieniach wpisano imię dziecka (np. *KASIA*), co kilka rund pojawia się runda specjalna z układaniem własnego imienia!
 5. 🎴 **Pary (Memory)**:
-   - Gra pamięciowa dopasowana do telewizora: dziecko odkrywa pary (litera + pasujące zwierzątko) za pomocą strzałek pilota lub wciskając odpowiednią literę na klawiaturze.
+   - Gra pamięciowa: dziecko odkrywa pary (litera + pasujące zwierzątko) dotykiem lub wciskając odpowiednią literę.
 6. 🕵️ **Cienie („Kto się schował?”)**:
    - Zwierzątko ukrywa się w scenerii jako tajemniczy czarny kontur. Po naciśnięciu właściwej litery następuje rozbłysk, zwierzątko ujawnia barwy i wita się z dzieckiem.
 7. 🧩 **Sylaby (Metoda symultaniczno-sekwencyjna)**:
    - Wczesna nauka czytania metodą sylabową (np. `[ŻA]` + `[BA]` = ŻABA, `[KO]` + `[TEK]` = KOTEK). Duże, pulsujące kafelki sylab ułatwiają płynne składanie słów.
 8. 👂 **Dźwięki (Zagadki słuchowe)**:
-   - Z głośników telewizora dobiega odgłos zwierzaka (miauczenie, szczekanie, rżenie, rechot, ryk lwa itp.). Dziecko odgaduje, kto to był. Klawiszem `R` można powtórzyć dźwięk w dowolnym momencie.
+   - Z głośników dobiega odgłos zwierzaka (miauczenie, szczekanie, rżenie, rechot, ryk lwa itp.). Dziecko odgaduje, kto to był. Klawiszem `R` lub przyciskiem 🔊 można powtórzyć dźwięk w dowolnym momencie.
 
 ---
 
 ## 🥕 Interaktywne karmienie zwierzątka
 
-Pod ilustracją każdego zwierzaka znajduje się przycisk **Nakarm**, wyzwalany również największym klawiszem klawiatury — **Spacją**:
+Pod ilustracją każdego zwierzaka znajduje się przycisk **Nakarm**, wyzwalany również klawiszem **Spacja** lub dotknięciem przysmaku na klawiaturze:
 - 🐟 **Rybka** dla kota, foki, delfina, pingwina, niedźwiedzia.
 - 🦴 **Kostka** dla psa, wilka, lisa.
 - 🥕 **Marchewka** dla królika, zająca, chomika.
@@ -83,32 +107,36 @@ Przysmak szybuje do pyszczka, rozlega się chrupiący dźwięk (`playMunch()`), 
 
 ---
 
-## 📺 Instalacja na Android TV
+## 📱 Instalacja na smartfonach i tabletach (zwykły Android)
 
-### Pobranie gotowego pliku APK:
-Pobierz najnowszą wersję: [**`literkowo-tv.apk` (GitHub Releases)**](https://github.com/georek86/literkowo-androidtv/releases/download/v1.0.0-tv/literkowo-tv.apk).
-
-### Jak zainstalować:
-1. **Przez pendrive USB**:
-   - Skopiuj pobrany plik `literkowo-tv.apk` na pendrive i podłącz do portu USB w dekoderze/telewizorze.
-   - Za pomocą dowolnego menedżera plików dla Android TV (np. *X-plore*, *AnExplorer*) zainstaluj plik.
-2. **Bezprzewodowo (np. aplikacja Send Files to TV)**:
-   - Prześlij plik z telefonu lub komputera na telewizor i uruchom instalator.
-
-Po instalacji kafelka **Literkowo** pojawi się w głównym menu Android TV. Aplikacja pamięta stan pełnego ekranu i nie wymaga dotyku ani myszy.
+1. Pobierz plik [**`literkowo.apk`**](https://github.com/georek86/literkowo-androidtv/releases/download/v1.0.0/literkowo.apk) w przeglądarce telefonu lub tabletu.
+2. Otwórz pobrany plik z powiadomień lub folderu *Pobrane*.
+3. Potwierdź instalację (jeśli system zapyta, zezwól na instalację z tego źródła).
+4. Ikona **Literkowo** pojawi się na ekranie głównym urządzenia.
 
 ---
 
-## ⌨️ Sterowanie fizyczną klawiaturą i pilotem
+## 📺 Instalacja na Android TV
 
-Aplikacja została zaprojektowana według standardu **10-foot UI** (czytelność z odległości 3 metrów od kanapy):
+1. Pobierz plik [**`literkowo-tv.apk`**](https://github.com/georek86/literkowo-androidtv/releases/download/v1.0.0/literkowo-tv.apk).
+2. **Przez pendrive USB**:
+   - Skopiuj plik na pendrive i podłącz do portu USB w telewizorze lub dekoderze.
+   - Za pomocą dowolnego menedżera plików dla Android TV (np. *X-plore*, *AnExplorer*) zainstaluj plik.
+3. **Bezprzewodowo**:
+   - Prześlij plik z telefonu lub komputera na telewizor za pomocą darmowej aplikacji *Send Files to TV*.
+4. Kafelka **Literkowo TV** pojawi się na ekranie głównym telewizora w rzędzie aplikacji.
+
+---
+
+## ⌨️ Sterowanie na TV (klawiatura fizyczna i pilot)
+
 - **Dowolna litera (`A–Z`, polskie znaki)**: odkrywa zwierzątko, odpowiada na quizy lub obraca karty.
 - **Spacja**: w trybie swobodnym karmi zwierzaka; w menu uruchamia zaznaczony przycisk.
 - **Strzałki (D-Pad)**: płynna nawigacja przestrzenna po opcjach, kartach memory i ustawieniach.
 - **Enter**: zatwierdzenie wyboru / start.
-- **Esc / Back na pilocie**: wstrzymanie zabawy (pauza) lub wyjście z dialogu.
-- **Klawisz `P` (lub przytrzymanie przez 2 sekundy)**: bramka rodzicielska chroniąca przed przypadkowym wyjściem przez dziecko.
-- **Klawisze głośności**: są całkowicie bezpieczne (regulują dźwięk bez przełączania zwierzątek).
+- **Esc / Back na pilocie**: wstrzymanie zabawy (pauza) lub powrót z dialogu.
+- **Klawisz `P` (lub przytrzymanie przez 2 sekundy)**: bramka rodzicielska chroniąca przed przypadkowym wyjściem.
+- **Klawisze głośności**: regulują dźwięk telewizora bez wpływu na grę.
 
 ---
 
@@ -133,7 +161,7 @@ npm start
 # Uruchomienie pełnego zestawu 64 testów jednostkowych i integracyjnych
 npm test
 
-# Budowanie wersji statycznej dist/ oraz synchronizacja assetów Android TV
+# Budowanie wersji statycznej dist/ oraz synchronizacja assetów aplikacji Android
 npm run build
 ```
 

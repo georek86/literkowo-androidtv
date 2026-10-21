@@ -3,17 +3,39 @@ plugins {
 }
 
 android {
-    namespace 'pl.literkowo.tv'
+    namespace 'pl.literkowo'
     compileSdk 34
 
     defaultConfig {
-        applicationId "pl.literkowo.tv"
+        applicationId "pl.literkowo"
         minSdk 21
         targetSdk 34
         versionCode 1
         versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    flavorDimensions = ["device"]
+    productFlavors {
+        mobile {
+            dimension "device"
+            applicationId "pl.literkowo"
+            versionCode 1
+            versionName "1.0.0"
+            manifestPlaceholders = [
+                appName: "Literkowo"
+            ]
+        }
+        tv {
+            dimension "device"
+            applicationId "pl.literkowo.tv"
+            versionCode 1
+            versionName "1.0.0"
+            manifestPlaceholders = [
+                appName: "Literkowo TV"
+            ]
+        }
     }
 
     buildTypes {
