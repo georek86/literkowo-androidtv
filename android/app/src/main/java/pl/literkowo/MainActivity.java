@@ -2,12 +2,17 @@ package pl.literkowo;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -15,6 +20,49 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    public class AndroidBridge {
+        @JavascriptInterface
+        public void showSystemKeyboard() {
+            mainHandler.post(() -> {
+                if (webView != null) {
+                    webView.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void hideSystemKeyboard() {
+            mainHandler.post(() -> {
+                if (webView != null) {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void toggleSystemKeyboard() {
+            mainHandler.post(() -> {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean isAndroidApp() {
+            return true;
+        }
+    }
 
     @Override
     @SuppressLint("SetJavaScriptEnabled")
@@ -27,6 +75,9 @@ public class MainActivity extends Activity {
         // Fullscreen window feature
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+        // Allow webview to adjust resize when soft keyboard appears
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webview);
@@ -45,8 +96,15 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+        // Viewport scaling: useWideViewPort allows viewport meta tag, overviewMode false ensures 1:1 CSS scaling
         settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
+        settings.setLoadWithOverviewMode(false);
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+
+        webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient());
@@ -63,9 +121,7 @@ public class MainActivity extends Activity {
         decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
         );
     }
@@ -79,25 +135,25 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onBackPressed() {
+        if (webView != null) {
+            webView.evaluateJavascript(
+                "(function() {" +
+                "  const ev = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true });" +
+                "  window.dispatchEvent(ev);" +
+                "})()", null);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         // Let volume keys control system music volume directly
         if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP ||
             event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN ||
             event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_MUTE) {
             return super.dispatchKeyEvent(event);
-        }
-
-        // On Back button (KEYCODE_BACK), send an Escape key event to the web app
-        // so it triggers pause or navigates back inside the app instead of closing immediately.
-        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
-            if (event.getAction() == KeyEvent.ACTION_UP) {
-                webView.evaluateJavascript(
-                    "(function() {" +
-                    "  const ev = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true });" +
-                    "  window.dispatchEvent(ev);" +
-                    "})()", null);
-            }
-            return true;
         }
 
         return super.dispatchKeyEvent(event);

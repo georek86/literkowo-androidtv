@@ -24,7 +24,8 @@ android {
             versionCode 1
             versionName "1.0.0"
             manifestPlaceholders = [
-                appName: "Literkowo"
+                appName: "Literkowo",
+                orientation: "sensor"
             ]
         }
         tv {
@@ -33,7 +34,8 @@ android {
             versionCode 1
             versionName "1.0.0"
             manifestPlaceholders = [
-                appName: "Literkowo TV"
+                appName: "Literkowo TV",
+                orientation: "sensorLandscape"
             ]
         }
     }

@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f6f3eb">
   <meta name="description" content="Interaktywna zabawa rodzica lub opiekuna z dzieckiem — wspólne poznawanie zwierzątek.">
   <meta name="mobile-web-app-capable" content="yes">
@@ -75,7 +75,12 @@
           </button>
         </div>
       </div>
-      <button class="primary-button" id="start" type="button" autofocus>Zaczynamy <span aria-hidden="true">↗</span></button>
+      <div class="welcome-actions">
+        <button class="primary-button" id="start" type="button" autofocus>Zaczynamy <span aria-hidden="true">↗</span></button>
+        <button type="button" class="secondary-button btn-welcome-ime" id="btn-welcome-ime" aria-label="Wysuń klawiaturę systemową">
+          <span aria-hidden="true">⌨️</span> <span>Klawiatura systemowa</span>
+        </button>
+      </div>
       <p class="start-note">Wyłącznie wspólnie i pod nadzorem opiekuna.</p>
       <p class="screen-note" id="screen-note">WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2 lat. Wspólna zabawa również jest czasem ekranowym. <a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></p>
       <div class="welcome-options">
@@ -122,6 +127,18 @@
 
     <!-- Dedicated Keyboard Dock for Mobile & TV -->
     <div class="keyboard-dock" id="keyboard-dock" role="region" aria-label="Klawiatura ekranowa dla dzieci">
+      <!-- System Soft Keyboard (Wysuwalna Klawiatura Android / Android TV) -->
+      <div class="system-ime-bar" id="system-ime-bar">
+        <button type="button" class="btn-system-ime" id="btn-system-ime" aria-label="Wysuń klawiaturę systemową">
+          <span class="ime-icon" aria-hidden="true">⌨️</span>
+          <span class="ime-text">Wysuń klawiaturę systemową</span>
+        </button>
+        <input id="system-ime-input" class="system-ime-input" type="text"
+               autocomplete="off" autocorrect="off" autocapitalize="characters"
+               spellcheck="false" inputmode="text"
+               placeholder="Dotknij, aby wpisać literkę..."
+               aria-label="Wpisz literkę za pomocą klawiatury systemowej">
+      </div>
       <div class="keyboard-map-container software-keyboard" id="keyboard-map-container"></div>
       <button type="button" class="btn-toggle-keyboard" id="btn-toggle-keyboard" aria-label="Pokaż lub schowaj klawiaturę ekranową">
         <span aria-hidden="true">⌨️</span> <span id="toggle-kb-text">Schowaj</span>
@@ -209,6 +226,5 @@
     <button class="primary-button" id="card-detail-close" type="button">Wróć do albumu</button>
   </dialog>
   <dialog id="paused" aria-labelledby="paused-title"><span class="eyebrow">MAŁA PRZERWA</span><h2 id="paused-title">Zabawa wstrzymana</h2><p>Wróćcie, kiedy będziecie gotowi.</p><p id="pause-detail"></p><button class="primary-button" id="resume" type="button">Wznów zabawę</button><button class="text-button" id="stop" type="button">Zakończ zabawę</button></dialog>
-  <input id="system-ime-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text" style="position:fixed;opacity:0;pointer-events:none;top:-100px;left:-100px;width:1px;height:1px;" aria-hidden="true" tabindex="-1">
 </body>
 </html>

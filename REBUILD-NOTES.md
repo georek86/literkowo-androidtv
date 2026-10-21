@@ -34,6 +34,21 @@ Stan: **Wszystkie poprawki zostały wdrożone, przetestowane i zintegrowane w ga
   - **Automatyczna widoczność klawiatury**: Wywołanie `updateKeyboardVisibility()` w funkcji `begin()`, wymuszające aktywację klawiatury ekranowej przy każdym rozpoczęciu rozgrywki na urządzeniach mobilnych.
   - **Interaktywność ekranu startowego**: Dotknięcie karty zwierzątka na ekranie powitalnym lub naciśnięcie klawisza natychmiast rozpoczyna rozgrywkę.
 
+### 1.5. Klawiatura w systemie (wysuwalna) oraz skalowanie ekranu na telefonach — ROZWIĄZANE
+- **Problem**:
+  1. Aplikacja nie posiadała mostu natywnego (`JavascriptInterface`) do wywoływania systemowej klawiatury ekranowej Androida (`InputMethodManager.showSoftInput`).
+  2. Element `#system-ime-input` był umieszczony poza ekranem (`top: -100px; pointer-events: none`), przez co silnik Chromium w WebView nie uznawał go za interaktywne pole i odmawiał wysunięcia klawiatury systemowej (IME / Gboard / Leanback TV).
+  3. W `styles.xml` flaga `windowFullscreen=true` blokowała działanie `windowSoftInputMode="adjustResize"`, uniemożliwiając przeskalowanie widoku po wysunięciu klawiatury systemowej.
+  4. Jednostki wysokości w CSS (`svh`) nie były wspierane przez część wersji Android System WebView, co powodowało odrzucanie reguł responsywności i powrót do sztywnych wysokości kart (510px).
+  5. Sztywne zablokowanie orientacji `sensorLandscape` w manifeście powodowało problemy na telefonach trzymanych pionowo.
+- **Rozwiązanie**:
+  - **Most natywny `AndroidBridge`**: Dodano `@JavascriptInterface` w `MainActivity.java` z metodami `showSystemKeyboard()`, `hideSystemKeyboard()` i `toggleSystemKeyboard()`, współpracującymi bezpośrednio z systemowym `InputMethodManager`.
+  - **Pasek klawiatury systemowej `#system-ime-bar`**: Wprowadzono czytelny przycisk `⌨️ Wysuń klawiaturę systemową` oraz interaktywne pole tekstowe `#system-ime-input`. Każde dotknięcie przycisku lub pola natychmiast wysuwa systemową klawiaturę (Gboard na smartfonach, Leanback Virtual Keyboard na Android TV).
+  - **Ciągłe wprowadzanie liter**: Pole tekstowe po każdym wprowadzonym znaku natychmiast wywołuje powiązane zwierzątko i zachowuje fokus, dzięki czemu klawiatura systemowa **nie chowa się** po wpisaniu pojedynczej litery.
+  - **Przycisk na ekranie startowym (`#btn-welcome-ime`)**: Umożliwia natychmiastowe rozpoczęcie zabawy z wysuniętą klawiaturą systemową jednym dotknięciem.
+  - **Uniwersalne skalowanie CSS bez zależności od `svh`**: Wszystkie reguły wysokości zaktualizowano o bezpieczne `vh` i dynamiczne przeliczanie widoku, gwarantując idealne skalowanie na smartfonach i tabletach o dowolnych rozdzielczościach.
+  - **Elastyczna orientacja dla smartfonów**: W `build.gradle` wersja `mobile` otrzymała placeholder `orientation: "sensor"` (automatyczne dopasowanie do pionu lub poziomu), a wersja `tv` zachowuje `orientation: "sensorLandscape"`.
+
 ---
 
 ## 2. Przebudowa i publikacja APK (Mobile & TV)

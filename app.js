@@ -90,6 +90,9 @@ const memoryBoardEl = $('memory-board');
 const keyboardMapContainer = $('keyboard-map-container');
 const btnToggleKeyboard = $('btn-toggle-keyboard');
 const keyboardDockEl = $('keyboard-dock');
+const systemImeBar = $('system-ime-bar');
+const btnSystemIme = $('btn-system-ime');
+const btnWelcomeIme = $('btn-welcome-ime');
 const systemImeInput = $('system-ime-input');
 const settingProfileSelect = $('setting-profile');
 const settingChildNameInput = $('setting-child-name');
@@ -125,15 +128,37 @@ const isTouchDevice = (typeof window !== 'undefined') && (
 );
 
 function updateKeyboardVisibility() {
-  const shouldEnable = isTouchDevice || collection.isKeyboardHint();
+  const shouldEnable = isTouchDevice || Boolean(window.AndroidBridge) || collection.isKeyboardHint();
   keyboardHelper.setEnabled(shouldEnable);
   if (keyboardDockEl) {
     keyboardDockEl.hidden = phase !== 'playing' || !shouldEnable;
+  }
+  if (systemImeBar) {
+    systemImeBar.hidden = phase !== 'playing' || !shouldEnable;
   }
   if (btnToggleKeyboard) {
     btnToggleKeyboard.hidden = phase !== 'playing' || !shouldEnable;
     const txt = btnToggleKeyboard.querySelector('#toggle-kb-text');
     if (txt) txt.textContent = keyboardHelper.collapsed ? 'Klawiatura' : 'Schowaj';
+  }
+}
+
+export function openSystemKeyboard() {
+  if (systemImeInput) {
+    systemImeInput.focus();
+    systemImeInput.click();
+  }
+  if (window.AndroidBridge?.showSystemKeyboard) {
+    try { window.AndroidBridge.showSystemKeyboard(); } catch {}
+  }
+}
+
+export function hideSystemKeyboard() {
+  if (systemImeInput) {
+    systemImeInput.blur();
+  }
+  if (window.AndroidBridge?.hideSystemKeyboard) {
+    try { window.AndroidBridge.hideSystemKeyboard(); } catch {}
   }
 }
 const hasKeyboardLock = Boolean(navigator.keyboard?.lock);
@@ -754,10 +779,7 @@ function handleSoftwareKey(key) {
   }
 
   if (key === 'SystemIME') {
-    if (systemImeInput) {
-      systemImeInput.focus();
-      systemImeInput.click();
-    }
+    openSystemKeyboard();
     return;
   }
 
@@ -1037,6 +1059,9 @@ async function begin(resuming = false) {
   document.body.classList.add('playing');
   phase = 'playing';
   updateKeyboardVisibility();
+  if (isTouchDevice || window.AndroidBridge) {
+    setTimeout(openSystemKeyboard, 180);
+  }
   state.start();
   startClock();
   startButton.disabled = false;
@@ -1214,21 +1239,79 @@ function handleKeyboardToggle(e) {
 btnToggleKeyboard?.addEventListener('pointerdown', handleKeyboardToggle);
 btnToggleKeyboard?.addEventListener('click', handleKeyboardToggle);
 
+function handleImeInput(char) {
+  if (!char) return;
+  if (phase === 'welcome') {
+    begin();
+    setTimeout(() => discoverAnimal(char), 100);
+  } else {
+    handleSoftwareKey(char);
+  }
+}
+
 if (systemImeInput) {
+  systemImeInput.addEventListener('focus', () => {
+    keyboardDockEl?.classList.add('ime-focused');
+    if (window.AndroidBridge?.showSystemKeyboard) {
+      try { window.AndroidBridge.showSystemKeyboard(); } catch {}
+    }
+  });
+
+  systemImeInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      keyboardDockEl?.classList.remove('ime-focused');
+    }, 200);
+  });
+
   systemImeInput.addEventListener('input', () => {
     const val = systemImeInput.value;
     systemImeInput.value = '';
-    if (val) {
-      const char = val[val.length - 1];
-      handleSoftwareKey(char);
+    if (val && val.length > 0) {
+      const char = val.charAt(val.length - 1);
+      handleImeInput(char);
     }
   });
+
   systemImeInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' || e.key === 'Enter') {
-      handleSoftwareKey(e.key);
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      systemImeInput.value = '';
+      handleImeInput(' ');
+    } else if (e.key === 'Backspace') {
+      handleSoftwareKey('Backspace');
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      systemImeInput.value = '';
+      if (phase === 'welcome') {
+        begin();
+      } else {
+        feedCurrentAnimal();
+      }
+    } else if (e.key && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      handleImeInput(e.key);
     }
   });
 }
+
+btnSystemIme?.addEventListener('click', (e) => {
+  e.preventDefault();
+  openSystemKeyboard();
+});
+btnSystemIme?.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  openSystemKeyboard();
+});
+
+btnWelcomeIme?.addEventListener('click', (e) => {
+  e.preventDefault();
+  begin();
+  setTimeout(openSystemKeyboard, 120);
+});
+btnWelcomeIme?.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  begin();
+  setTimeout(openSystemKeyboard, 120);
+});
 
 settingNightMode?.addEventListener('change', () => {
   applyNightMode(settingNightMode.checked);
@@ -1739,7 +1822,7 @@ for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type,
 }, { capture: true, passive: true });
 document.querySelector('main').addEventListener('pointerdown', event => {
   if (phase === 'playing') {
-    if (event.target.closest('#keyboard-dock, #keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
+    if (event.target.closest('#keyboard-dock, #system-ime-bar, #btn-system-ime, #system-ime-input, #keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
     event.preventDefault();
     if (event.isPrimary && event.button === 0) discoverAnimal(' ');
   }
