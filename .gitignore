@@ -7,3 +7,10 @@ dist/
 codex-session-*.md
 .env
 .env.*
+
+# Android build outputs and binaries
+*.apk
+.gradle/
+build/
+android/.gradle/
+android/app/build/
