@@ -89,6 +89,7 @@ const nightBtn = $('night-btn');
 const memoryBoardEl = $('memory-board');
 const keyboardMapContainer = $('keyboard-map-container');
 const btnToggleKeyboard = $('btn-toggle-keyboard');
+const keyboardDockEl = $('keyboard-dock');
 const systemImeInput = $('system-ime-input');
 const settingProfileSelect = $('setting-profile');
 const settingChildNameInput = $('setting-child-name');
@@ -116,11 +117,29 @@ let phase = 'welcome';
 const album = new AnimalAlbum();
 let currentAnimal = album.current;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+const isTouchDevice = (typeof window !== 'undefined') && (
+  ('ontouchstart' in window) ||
+  (navigator.maxTouchPoints > 0) ||
+  Boolean(window.matchMedia?.('(pointer: coarse)')?.matches) ||
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent || '')
+);
+
+function updateKeyboardVisibility() {
+  const shouldEnable = isTouchDevice || collection.isKeyboardHint();
+  keyboardHelper.setEnabled(shouldEnable);
+  if (keyboardDockEl) {
+    keyboardDockEl.hidden = phase !== 'playing' || !shouldEnable;
+  }
+  if (btnToggleKeyboard) {
+    btnToggleKeyboard.hidden = phase !== 'playing' || !shouldEnable;
+    const txt = btnToggleKeyboard.querySelector('#toggle-kb-text');
+    if (txt) txt.textContent = keyboardHelper.collapsed ? 'Klawiatura' : 'Schowaj';
+  }
+}
 const hasKeyboardLock = Boolean(navigator.keyboard?.lock);
 
 // Touch-first devices start in a window without requiring keyboard protection.
-if (window.matchMedia('(pointer: coarse)').matches) {
+if (isTouchDevice) {
   if (fullscreenCheckbox) fullscreenCheckbox.checked = false;
   if (touchNoteEl) touchNoteEl.hidden = false;
 }
@@ -748,8 +767,9 @@ function handleSoftwareKey(key) {
   }
 
   if (phase === 'welcome') {
-    if (key === ' ' || key === 'Enter') {
-      begin();
+    begin();
+    if (key !== ' ' && key !== 'Enter') {
+      setTimeout(() => discoverAnimal(key), 80);
     }
     return;
   }
@@ -1016,11 +1036,7 @@ async function begin(resuming = false) {
   parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
   document.body.classList.add('playing');
   phase = 'playing';
-  if (btnToggleKeyboard) {
-    btnToggleKeyboard.hidden = !keyboardHelper.enabled;
-    const txt = btnToggleKeyboard.querySelector('#toggle-kb-text');
-    if (txt) txt.textContent = keyboardHelper.collapsed ? 'Klawiatura' : 'Schowaj';
-  }
+  updateKeyboardVisibility();
   state.start();
   startClock();
   startButton.disabled = false;
@@ -1035,6 +1051,7 @@ async function begin(resuming = false) {
 
 function pause() {
   if (phase !== 'playing') return;
+  if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   remaining = Math.max(0, endAt - performance.now());
   if (remaining === 0) { finish(); return; }
@@ -1055,6 +1072,7 @@ function pause() {
 
 function finish() {
   if (!['playing', 'paused'].includes(phase)) return;
+  if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   phase = 'finished';
   state.stop();
@@ -1086,6 +1104,7 @@ stopButton.addEventListener('click', returnToWelcome);
 
 function returnToWelcome() {
   phase = 'welcome';
+  if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
   state.stop();
   clearTimeout(sessionTimer);
@@ -1178,10 +1197,7 @@ settingPhonicsSelect?.addEventListener('change', () => {
 
 settingKeyboardHint?.addEventListener('change', () => {
   collection.setKeyboardHint(settingKeyboardHint.checked);
-  keyboardHelper.setEnabled(settingKeyboardHint.checked);
-  if (btnToggleKeyboard) {
-    btnToggleKeyboard.hidden = phase !== 'playing' || !settingKeyboardHint.checked;
-  }
+  updateKeyboardVisibility();
 });
 
 let lastToggleTime = 0;
@@ -1723,7 +1739,7 @@ for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type,
 }, { capture: true, passive: true });
 document.querySelector('main').addEventListener('pointerdown', event => {
   if (phase === 'playing') {
-    if (event.target.closest('#keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
+    if (event.target.closest('#keyboard-dock, #keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
     event.preventDefault();
     if (event.isPrimary && event.button === 0) discoverAnimal(' ');
   }
@@ -1741,7 +1757,12 @@ window.addEventListener('pageshow', event => {
 });
 
 applyNightMode(collection.isNightMode());
-keyboardHelper.setEnabled(collection.isKeyboardHint());
+updateKeyboardVisibility();
+stageEl?.addEventListener('click', () => {
+  if (phase === 'welcome') {
+    begin();
+  }
+});
 quizEngine.setPhonicsMode(collection.getPhonicsMode());
 quizEngine.setChildName(collection.getChildName());
 

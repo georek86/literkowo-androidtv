@@ -25,6 +25,15 @@ Stan: **Wszystkie poprawki zostały wdrożone, przetestowane i zintegrowane w ga
   - Zmieniono szerokość kontenera na `width: calc(100% - 48px); max-width: 480px;`, zapewniając bezpieczny margines 24px z każdej strony od zaokrąglonych krawędzi.
   - Wprowadzono dedykowany media-query dla ekranów wąskich (`max-width: 620px`) skalujący kafelki (`height: 30px`, `width: calc(100% - 24px)`), gwarantujący brak obcinania na małych ekranach smartfonów.
 
+### 1.4. Dedykowany dock klawiatury i widok horyzontalny (Landscape) na smartfonach — ROZWIĄZANE
+- **Problem**: Na smartfonach zablokowanych w orientacji poziomej (`sensorLandscape`, np. wysokość 360–400px), karta `.animal-stage` miała `height: 84svh; overflow: hidden;` w układzie pionowym (`flex-direction: column`). Sama karta zwierzątka (litera, duża ilustracja SVG, nazwa i przycisk karmienia) wypełniała całą wysokość ekranu, wypychając klawiaturę poza dolną krawędź widoku (gdzie była w 100% obcinana). Ponadto klasa kontenera w `keyboard-map.js` była nadpisywana, a detekcja urządzeń dotykowych w WebView mogła zwracać `false`.
+- **Rozwiązanie**:
+  - **Dedykowany dock `#keyboard-dock`**: Przeniesiono kontener klawiatury i przycisk zwijania poza kartę `.animal-stage` jako bezpośredni brat sceny w elemencie `<main>`.
+  - **Układ side-by-side w trybie poziomym (`@media (max-height: 600px)`)**: W orientacji poziomej `main` używa układu dwukolumnowego (`flex-direction: row`): po lewej stronie kompaktowa karta zwierzątka (340px szerokości, wysokość dopasowana do ekranu), a po prawej pełna klawiatura ekranowa (3 rzędy liter + rząd akcji) z dużymi, wygodnymi przyciskami dotykowymi.
+  - **Pancerna detekcja ekranu dotykowego (`isTouchDevice`)**: Sprawdzanie `ontouchstart`, `navigator.maxTouchPoints > 0`, `matchMedia('(pointer: coarse)')` oraz wyrażenia regularnego User-Agenta Android/Mobile, gwarantujące poprawne rozpoznanie w Android WebView.
+  - **Automatyczna widoczność klawiatury**: Wywołanie `updateKeyboardVisibility()` w funkcji `begin()`, wymuszające aktywację klawiatury ekranowej przy każdym rozpoczęciu rozgrywki na urządzeniach mobilnych.
+  - **Interaktywność ekranu startowego**: Dotknięcie karty zwierzątka na ekranie powitalnym lub naciśnięcie klawisza natychmiast rozpoczyna rozgrywkę.
+
 ---
 
 ## 2. Przebudowa i publikacja APK (Mobile & TV)

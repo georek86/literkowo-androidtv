@@ -3,7 +3,7 @@
 @media(min-width:1500px){main{max-width:1330px;gap:95px}.animal-stage{min-height:570px}.illustration{max-width:430px}}
 @media(max-width:850px){.tagline{display:none}main{gap:30px;padding:25px 28px;grid-template-columns:1fr 1fr}.animal-stage{min-height:440px;border-radius:140px 140px 30px 30px}.stage-top{left:30px;right:28px}.illustration{width:90%}h1{font-size:46px}.welcome-options{flex-direction:column;gap:14px}.intro{font-size:14px}.big-letter{font-size:85px}.stage-bottom{font-size:9px}.stage-top .eyebrow{font-size:8px}.primary-button{padding:17px 25px}}
 @media(max-width:620px){.topbar{padding:22px}.brand{font-size:25px}.parent-button{font-size:11px;padding:9px 12px}.parent-button span{display:none}main{display:flex;flex-direction:column;gap:32px;padding:20px 24px;min-height:0}.welcome{width:100%;text-align:center}.welcome .eyebrow{justify-content:center}h1{font-size:46px;margin:23px 0 18px}.intro{font-size:14px}.welcome-options{flex-direction:row;justify-content:center;max-width:none}.start-note{margin-bottom:24px}.voice-note{margin:12px auto 0}#start{margin-top:12px}.animal-stage{width:min(100%,420px);min-height:430px;aspect-ratio:auto}.illustration{width:75%}footer{gap:13px;flex-wrap:wrap;padding:20px;font-size:10px}.footer-dot{display:none}.finish{text-align:center}body.playing .animal-stage{width:95%;height:74svh;min-height:340px;border-radius:150px 150px 30px 30px}body.playing .stage-top{left:35px;right:30px}body.playing .illustration{width:85%}body.playing .animal-label h2{font-size:32px}.play-instructions{font-size:11px}}
-@media(max-height:600px) and (min-width:621px){body.playing .animal-stage{height:84svh;min-height:280px;width:600px}body.playing .illustration{width:245px}body.playing .big-letter{font-size:75px}body.playing .animal-label h2{font-size:28px}body.playing main{padding:15px;gap:8px}.stage-top{top:25px}}
+/* replaced by responsive keyboard layout below */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* Keep the small captions inside the rounded top of the card. */
@@ -1090,3 +1090,282 @@ body.night-mode .feed-btn {
 }
 
 
+
+
+/* Dedicated Keyboard Dock */
+.keyboard-dock {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
+  user-select: none;
+}
+body.playing .keyboard-dock {
+  display: flex !important;
+}
+body.playing .keyboard-dock[hidden] {
+  display: none !important;
+}
+
+/* Landscape Mode (Phones & Tablets: height <= 600px) - Side-by-side Layout */
+@media (max-height: 600px) {
+  body.playing .topbar {
+    padding: 6px 16px !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 5 !important;
+  }
+  body.playing .brand {
+    font-size: 16px !important;
+  }
+  body.playing .brand-mark {
+    width: 22px !important;
+    height: 24px !important;
+    font-size: 18px !important;
+    margin-right: 6px !important;
+  }
+  body.playing .brand-mark span {
+    font-size: 12px !important;
+  }
+  body.playing .parent-button {
+    font-size: 10px !important;
+    padding: 4px 10px !important;
+  }
+  body.playing main {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    padding: 38px 10px 4px !important;
+    min-height: 100svh !important;
+    height: 100svh !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  body.playing .animal-stage {
+    flex: 0 1 340px !important;
+    width: min(42vw, 360px) !important;
+    height: calc(100svh - 44px) !important;
+    max-height: 380px !important;
+    min-height: 200px !important;
+    aspect-ratio: auto !important;
+    border-radius: 36px 36px 20px 20px !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    overflow: hidden !important;
+    justify-content: center !important;
+  }
+  body.playing .stage-top {
+    top: 8px !important;
+    left: 14px !important;
+    right: 14px !important;
+  }
+  body.playing .stage-top .eyebrow {
+    font-size: 8px !important;
+    letter-spacing: 1px !important;
+  }
+  body.playing .little-star {
+    font-size: 16px !important;
+  }
+  body.playing .animal-content {
+    padding-top: 4px !important;
+    gap: 2px !important;
+  }
+  body.playing .big-letter {
+    font-size: clamp(38px, 12vh, 60px) !important;
+    letter-spacing: -2px !important;
+    line-height: 1 !important;
+  }
+  body.playing .illustration {
+    width: min(70%, 150px) !important;
+    max-height: 35vh !important;
+    margin-top: -2px !important;
+  }
+  body.playing .animal-label {
+    gap: 8px !important;
+    margin-top: -2px !important;
+  }
+  body.playing .animal-label h2 {
+    font-size: clamp(16px, 4.8vh, 24px) !important;
+  }
+  body.playing .feed-btn {
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    margin-top: 2px !important;
+    border-radius: 16px !important;
+  }
+  body.playing .ground-leaf {
+    display: none !important;
+  }
+  body.playing .keyboard-dock {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    max-width: 580px !important;
+    min-width: 280px !important;
+    height: calc(100svh - 44px) !important;
+    padding: 0 4px !important;
+    justify-content: center !important;
+  }
+  body.playing .keyboard-map-container {
+    width: 100% !important;
+    max-width: 560px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 3px !important;
+  }
+  body.playing .kb-row {
+    gap: clamp(2px, 0.4vw, 3.5px) !important;
+  }
+  body.playing .kb-key {
+    height: clamp(28px, 7.5vh, 40px) !important;
+    font-size: clamp(11px, 2.2vw, 15px) !important;
+    border-radius: 6px !important;
+    font-weight: bold !important;
+  }
+  body.playing .kb-action-row {
+    margin-top: 2px !important;
+    gap: clamp(2px, 0.4vw, 3.5px) !important;
+  }
+  body.playing .kb-key-action {
+    height: clamp(28px, 7.5vh, 40px) !important;
+    font-size: clamp(10px, 1.8vw, 12px) !important;
+    padding: 0 4px !important;
+  }
+  body.playing .btn-toggle-keyboard {
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+  body.playing .quiz-overlay {
+    padding: 10px 12px !important;
+  }
+  body.playing .quiz-prompt-text {
+    font-size: clamp(15px, 3.5vh, 20px) !important;
+    margin: 2px 0 0 !important;
+  }
+  body.playing .quiz-options {
+    gap: 8px !important;
+    margin: 4px 0 !important;
+  }
+  body.playing .quiz-option-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 22px !important;
+    border-radius: 10px !important;
+  }
+  body.playing .spelling-slots {
+    gap: 5px !important;
+    margin: 4px 0 !important;
+  }
+  body.playing .spelling-slot {
+    width: 32px !important;
+    height: 40px !important;
+    font-size: 18px !important;
+    border-radius: 8px !important;
+  }
+}
+
+/* Portrait Mode (width <= 620px and height > 600px) - Stacked Layout */
+@media (max-width: 620px) and (min-height: 601px) {
+  body.playing main {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 48px 10px 12px !important;
+    min-height: 100svh !important;
+    gap: 10px !important;
+  }
+  body.playing .animal-stage {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: 420px !important;
+    height: auto !important;
+    min-height: 200px !important;
+    max-height: 48svh !important;
+    border-radius: 40px 40px 24px 24px !important;
+    padding: 12px !important;
+  }
+  body.playing .big-letter {
+    font-size: clamp(48px, 11vw, 75px) !important;
+  }
+  body.playing .illustration {
+    width: min(65%, 220px) !important;
+    max-height: 26svh !important;
+  }
+  body.playing .animal-label h2 {
+    font-size: clamp(22px, 6vw, 30px) !important;
+  }
+  body.playing .keyboard-dock {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 460px !important;
+    margin-top: auto !important;
+  }
+  body.playing .keyboard-map-container {
+    width: 100% !important;
+    max-width: 460px !important;
+    margin: 0 auto !important;
+    gap: 3px !important;
+  }
+  body.playing .kb-row {
+    gap: 2.5px !important;
+  }
+  body.playing .kb-key {
+    height: clamp(30px, 4.8vh, 38px) !important;
+    font-size: clamp(10px, 3.2vw, 14px) !important;
+    border-radius: 6px !important;
+  }
+  body.playing .kb-key-action {
+    height: clamp(30px, 4.8vh, 38px) !important;
+    font-size: clamp(9px, 2.8vw, 11px) !important;
+  }
+}
+
+/* Desktop & Android TV (width > 620px and height > 600px) - Centered Column */
+@media (min-width: 621px) and (min-height: 601px) {
+  body.playing main {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 16px !important;
+    padding: 60px 20px 24px !important;
+    min-height: 100svh !important;
+  }
+  body.playing .animal-stage {
+    width: min(680px, 85vw) !important;
+    height: min(58svh, 540px) !important;
+    min-height: 320px !important;
+    border-radius: 160px 160px 40px 40px !important;
+  }
+  body.playing .keyboard-dock {
+    width: min(680px, 92vw) !important;
+    max-width: 680px !important;
+    margin-top: 0 !important;
+  }
+  body.playing .keyboard-map-container {
+    width: 100% !important;
+    max-width: 680px !important;
+    margin: 0 auto !important;
+    gap: 4px !important;
+  }
+  body.playing .kb-row {
+    gap: 4px !important;
+  }
+  body.playing .kb-key {
+    height: 36px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+  }
+  body.playing .kb-key-action {
+    height: 38px !important;
+    font-size: 12px !important;
+  }
+}

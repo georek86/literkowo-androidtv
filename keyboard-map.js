@@ -62,7 +62,7 @@ export class KeyboardMapHelper {
   render() {
     if (!this.container) return;
     this.container.replaceChildren();
-    this.container.className = 'keyboard-map-hint software-keyboard';
+    this.container.className = 'keyboard-map-container software-keyboard';
     this.container.setAttribute('role', 'region');
     this.container.setAttribute('aria-label', 'Klawiatura ekranowa dla dzieci');
     this.container.setAttribute('aria-expanded', String(!this.collapsed));

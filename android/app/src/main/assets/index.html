@@ -112,10 +112,6 @@
         <div class="celebration-star" aria-hidden="true">⭐</div>
         <span class="celebration-text" id="celebration-text">Brawo!</span>
       </div>
-      <div class="keyboard-map-container" id="keyboard-map-container" aria-hidden="true"></div>
-      <button type="button" class="btn-toggle-keyboard" id="btn-toggle-keyboard" aria-label="Pokaż lub schowaj klawiaturę ekranową" hidden>
-        <span aria-hidden="true">⌨️</span> <span id="toggle-kb-text">Schowaj</span>
-      </button>
       <div class="readiness" id="readiness" role="progressbar" aria-label="Gotowość na kolejne zwierzątko" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" hidden>
         <svg viewBox="0 0 28 28" aria-hidden="true"><circle class="readiness-track" cx="14" cy="14" r="10"/><circle class="readiness-fill" id="readiness-fill" cx="14" cy="14" r="10" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg>
         <span id="readiness-label">Można dalej</span>
@@ -123,6 +119,14 @@
       <div class="stage-bottom" id="stage-hint"><kbd>K</kbd><span>jak kot. Spróbuj innej literki.</span> <span class="feed-key-hint">· <kbd>Spacja</kbd> Nakarm</span></div>
       <span class="ground-leaf leaf-one" aria-hidden="true"></span><span class="ground-leaf leaf-two" aria-hidden="true"></span>
     </section>
+
+    <!-- Dedicated Keyboard Dock for Mobile & TV -->
+    <div class="keyboard-dock" id="keyboard-dock" role="region" aria-label="Klawiatura ekranowa dla dzieci">
+      <div class="keyboard-map-container software-keyboard" id="keyboard-map-container"></div>
+      <button type="button" class="btn-toggle-keyboard" id="btn-toggle-keyboard" aria-label="Pokaż lub schowaj klawiaturę ekranową">
+        <span aria-hidden="true">⌨️</span> <span id="toggle-kb-text">Schowaj</span>
+      </button>
+    </div>
 
     <section class="play-instructions" id="play-instructions" hidden><span class="status-dot"></span> Dotknij ekranu lub naciśnij klawisz.
       <span class="session-clock" id="session-clock" role="timer" aria-live="off" aria-label="Pozostały czas zabawy">3:00</span>
