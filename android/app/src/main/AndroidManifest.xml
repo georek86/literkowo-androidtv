@@ -12,6 +12,8 @@
         android:name="android.hardware.microphone"
         android:required="false" />
 
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />

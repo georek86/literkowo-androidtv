@@ -330,3 +330,23 @@ test('random draws (space/unassigned key) never repeat a first letter within 3 d
     });
   }
 });
+
+test('adaptive difficulty: fewer options after mistakes, more after a good run, hint after two mistakes', () => {
+  const engine = new QuizEngine(animals);
+  engine.setMode('guess-letter');
+  let q = engine.currentQuestion;
+  assert.equal(q.options.length, 3);
+  const wrong = () => q.options.find(o => o !== q.targetChar);
+  let r = engine.checkInput(wrong());
+  assert.equal(r.hint, false);
+  r = engine.checkInput(wrong());
+  assert.equal(r.hint, true, 'second mistake on the same question shows a hint');
+  q = engine.nextQuestion();
+  assert.equal(q.options.length, 2, 'two mistakes in a row simplify the next question');
+  for (let i = 0; i < 6; i++) {
+    engine.checkInput(q.targetInputKey);
+    q = engine.nextQuestion();
+  }
+  assert.equal(q.options.length, 4, 'a streak of correct answers adds a choice');
+  assert.ok(q.options.includes(q.targetChar));
+});

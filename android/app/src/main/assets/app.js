@@ -830,6 +830,10 @@ function setupQuizQuestion() {
   }
 }
 
+function vibrate(pattern) {
+  try { navigator.vibrate?.(pattern); } catch {}
+}
+
 function handleQuizInput(key) {
   if (phase !== 'playing' || quizEngine.mode === 'explore') return;
   if (!quizEngine.currentQuestion) return;
@@ -861,7 +865,8 @@ function handleQuizInput(key) {
 
       showAnimal(res.animal);
       if (quizCelebrationEl) quizCelebrationEl.hidden = false;
-      if (celebrationTextEl) celebrationTextEl.textContent = 'Brawo! ⭐ +1';
+      if (celebrationTextEl) celebrationTextEl.textContent = stars % 5 === 0 ? 'Brawo! 🏅 Naklejka!' : 'Brawo! ⭐ +1';
+      vibrate(40);
 
       if (unlockedAnimal) {
         setTimeout(() => {
@@ -895,6 +900,7 @@ function handleQuizInput(key) {
   } else {
     // Incorrect answer
     playTryAgain();
+    vibrate([60, 40, 60]);
     collection.recordAnswer(quizEngine.currentQuestion.targetChar || quizEngine.currentQuestion.animal?.key, false);
 
     const btns = quizOptionsEl?.querySelectorAll('.quiz-option-btn') || [];
@@ -903,6 +909,10 @@ function handleQuizInput(key) {
         b.classList.add('wrong');
         setTimeout(() => b.classList.remove('wrong'), 450);
       }
+    }
+    if (res.hint) {
+      const answer = quizEngine.currentQuestion.targetChar;
+      for (const b of btns) b.classList.toggle('hint', b.dataset.letter === answer);
     }
     quizPromptTextEl?.classList.add('wrong');
     setTimeout(() => quizPromptTextEl?.classList.remove('wrong'), 450);
@@ -1523,9 +1533,27 @@ modeSelector?.querySelectorAll('.mode-pill').forEach(btn => {
     btn.classList.add('active');
     btn.setAttribute('aria-checked', 'true');
     quizEngine.setMode(btn.dataset.mode);
+    try { localStorage.setItem('literkowo-last-mode', btn.dataset.mode); } catch {}
     playClick();
   });
 });
+
+// Remember the last chosen game so "Graj" continues where the child left off.
+try {
+  const lastMode = localStorage.getItem('literkowo-last-mode');
+  const pill = lastMode && modeSelector?.querySelector(`.mode-pill[data-mode="${lastMode}"]`);
+  if (pill && lastMode !== 'explore') pill.click();
+} catch {}
+
+// "Zwierzątko dnia": the same animal all day, a different one tomorrow.
+{
+  const el = document.getElementById('animal-of-day');
+  if (el) {
+    const day = Math.floor(Date.now() / 86_400_000);
+    const animal = animals[day % animals.length];
+    el.textContent = `Zwierzątko dnia: ${animal.name} — ${animal.key.toLocaleUpperCase('pl')} jak ${animal.name}`;
+  }
+}
 
 parentButton.addEventListener('pointerdown', startParentHold);
 parentButton.addEventListener('pointerleave', releaseParentHold);

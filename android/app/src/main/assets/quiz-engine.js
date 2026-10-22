@@ -27,6 +27,9 @@ export class QuizEngine {
     this.phonicsMode = 'alphabet'; // 'alphabet' | 'phonics'
     this.childName = '';
     this.spellingCount = 0;
+    this.correctInRow = 0;
+    this.wrongInRow = 0;
+    this.wrongOnQuestion = 0;
     this.currentQuestion = null;
     this.spellingPool = allAnimals.filter(a => SHORT_ANIMAL_NAMES.has(a.name.toLocaleLowerCase('pl')));
     if (this.spellingPool.length === 0) this.spellingPool = allAnimals.filter(a => a.name.length <= 5);
@@ -214,14 +217,21 @@ export class QuizEngine {
     return choices;
   }
 
-  generateOptions(targetLetter) {
+  // Adaptive difficulty: 3 choices by default, 2 after repeated mistakes, 4 after a good run.
+  optionCount() {
+    if (this.wrongInRow >= 2) return 2;
+    if (this.correctInRow >= 6) return 4;
+    return 3;
+  }
+
+  generateOptions(targetLetter, count = this.optionCount()) {
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'W', 'Z'];
     const distractors = alphabet.filter(l => l !== targetLetter);
     for (let i = distractors.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [distractors[i], distractors[j]] = [distractors[j], distractors[i]];
     }
-    const choices = [targetLetter, distractors[0], distractors[1]];
+    const choices = [targetLetter, ...distractors.slice(0, count - 1)];
     for (let i = choices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [choices[i], choices[j]] = [choices[j], choices[i]];
@@ -238,6 +248,15 @@ export class QuizEngine {
       const target = this.currentQuestion.targetChar;
       const animal = this.currentQuestion.animal;
       const sound = getLetterPronunciation(target, this.phonicsMode);
+      if (isCorrect) {
+        this.correctInRow++;
+        this.wrongInRow = 0;
+        this.wrongOnQuestion = 0;
+      } else {
+        this.wrongInRow++;
+        this.wrongOnQuestion++;
+        this.correctInRow = Math.max(0, this.correctInRow - 2);
+      }
 
       let successSpeech = `Brawo! Literka ${sound}! Jak ${animal.name}!`;
       if (this.mode === 'shadow') {
@@ -249,6 +268,8 @@ export class QuizEngine {
       return {
         correct: isCorrect,
         finished: isCorrect,
+        // After two mistakes on one question the app points at the right answer.
+        hint: !isCorrect && this.wrongOnQuestion >= 2,
         animal,
         letter: target,
         prompt: isCorrect ? `Brawo! To ${animal.name}!` : `Spróbuj jeszcze raz. Gdzie jest ${target}?`,
