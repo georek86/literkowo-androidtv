@@ -270,6 +270,7 @@ let readinessFrame;
 let lastReadinessProgress = -1;
 let lastReadinessPhase = '';
 let polishVoice = null;
+let nativeSpeechActive = false;
 let speechVersion = 0;
 let speechTimeout;
 let activeUtterance;
@@ -330,13 +331,16 @@ function updateVoices() {
   const polish = voices.filter(voice => /^pl(?:[-_]|$)/i.test(voice.lang));
   polishVoice = polish.find(voice => voice.localService) || polish[0] || null;
   if (voiceNoteEl) {
-    voiceNoteEl.textContent = polishVoice
-      ? (polishVoice.localService ? 'Polski głos jest dostępny na tym urządzeniu.' : 'Polski głos może wymagać połączenia z internetem.')
-      : 'Brak polskiego głosu na tym urządzeniu. Możecie sami nazywać zwierzątka lub doinstalować polski głos w systemie.';
+    voiceNoteEl.textContent = nativeSpeechAvailable()
+      ? 'Polski głos jest dostępny na tym urządzeniu.'
+      : polishVoice
+        ? (polishVoice.localService ? 'Polski głos jest dostępny na tym urządzeniu.' : 'Polski głos może wymagać połączenia z internetem.')
+        : 'Brak polskiego głosu na tym urządzeniu. Możesz sam nazywać zwierzątka albo doinstalować polski głos w ustawieniach systemu.';
   }
 }
 synth?.addEventListener('voiceschanged', updateVoices);
 updateVoices();
+setTimeout(updateVoices, 1500); // native TTS initialises asynchronously
 
 function notice(message) {
   clearTimeout(noticeTimer);
@@ -346,22 +350,49 @@ function notice(message) {
   noticeTimer = setTimeout(() => { noticeEl.hidden = true; }, 6500);
 }
 
+// Android app: use the native TextToSpeech engine through the bridge (WebView often has no voices).
+function nativeSpeechAvailable() {
+  try { return Boolean(window.AndroidBridge?.hasSpeech?.()); } catch { return false; }
+}
+function voiceAvailable() {
+  return Boolean(polishVoice) || nativeSpeechAvailable();
+}
+
 function cancelSpeech() {
   speechVersion++;
   clearTimeout(speechTimeout);
+  if (nativeSpeechActive) {
+    nativeSpeechActive = false;
+    try { window.AndroidBridge.stopSpeaking(); } catch {}
+  }
   if (activeUtterance) synth?.cancel();
   activeUtterance = null;
   state.speaking = false;
 }
 
 function speakText(text, onComplete) {
-  if (!soundCheckbox.checked || !polishVoice || !synth) {
+  const useNative = nativeSpeechAvailable();
+  if (!soundCheckbox.checked || !(useNative || (polishVoice && synth))) {
     if (onComplete) onComplete();
     return;
   }
   const version = ++speechVersion;
   state.speaking = true;
   updateReadiness();
+  if (useNative) {
+    nativeSpeechActive = true;
+    window.__nativeSpeechDone = id => {
+      if (id !== version || version !== speechVersion) return;
+      nativeSpeechActive = false;
+      clearTimeout(speechTimeout);
+      state.speechEnded();
+      updateReadiness();
+      if (onComplete) onComplete();
+    };
+    speechTimeout = setTimeout(() => window.__nativeSpeechDone(version), 7000);
+    try { window.AndroidBridge.speak(text, version); } catch { window.__nativeSpeechDone(version); }
+    return;
+  }
   const utterance = new SpeechSynthesisUtterance(text);
   activeUtterance = utterance;
   utterance.voice = polishVoice;
@@ -380,7 +411,7 @@ function speakText(text, onComplete) {
   utterance.onend = complete;
   utterance.onerror = () => {
     complete();
-    if (version === speechVersion) notice('Lektor jest niedostępny. Możecie nadal bawić się bez dźwięku.');
+    if (version === speechVersion) notice('Lektor jest niedostępny. Możesz nadal bawić się bez dźwięku.');
   };
   speechTimeout = setTimeout(() => {
     if (version !== speechVersion) return;
@@ -670,6 +701,18 @@ function renderSyllableOptions(options, targetSyllable) {
   setTimeout(() => quizOptionsEl.querySelector('.quiz-option-btn')?.focus(), 80);
 }
 
+let voiceWarningShown = false;
+function warnIfSilent() {
+  if (voiceWarningShown) return;
+  if (!soundCheckbox.checked) {
+    voiceWarningShown = true;
+    notice('Głos lektora jest wyłączony — polecenia widzisz tylko na ekranie. Włącz go na ekranie startowym.');
+  } else if (!voiceAvailable()) {
+    voiceWarningShown = true;
+    notice('Brak polskiego głosu w tym urządzeniu. Polecenia widzisz na ekranie; doinstaluj głos w ustawieniach systemu.');
+  }
+}
+
 function setupQuizQuestion() {
   if (quizEngine.mode === 'explore') {
     if (quizOverlayEl) quizOverlayEl.hidden = true;
@@ -690,11 +733,17 @@ function setupQuizQuestion() {
 
   const q = quizEngine.nextQuestion();
   if (!q) return;
+  warnIfSilent();
 
   if (quizCelebrationEl) quizCelebrationEl.hidden = true;
   if (quizOverlayEl) quizOverlayEl.hidden = false;
   if (memoryBoardEl) memoryBoardEl.hidden = true;
-  if (soundReplayBtn) soundReplayBtn.hidden = true;
+  if (soundReplayBtn) {
+    // Every question can be heard again; the animal-sound mode replays the sound itself.
+    soundReplayBtn.hidden = false;
+    soundReplayBtn.textContent = q.type === 'sound' ? '🔊 Posłuchaj dźwięku' : '🔊 Powtórz polecenie';
+    soundReplayBtn.setAttribute('aria-label', q.type === 'sound' ? 'Posłuchaj dźwięku jeszcze raz' : 'Powtórz polecenie');
+  }
   if (syllablesSlotsEl) syllablesSlotsEl.hidden = true;
   illustrationEl.classList.remove('shadow-silhouette', 'shadow-reveal');
   animalContentEl.hidden = false;
@@ -1145,7 +1194,7 @@ async function begin(resuming = false) {
   resumeButton.disabled = false;
   // Android WebView often reports hasFocus() === false even while visible; trust only visibility on touch devices and in the Android app (also TV).
   if (document.hidden || (!isTouchDevice && !window.AndroidBridge && !document.hasFocus())) { pause(); return; }
-  if (!resuming && soundCheckbox.checked && polishVoice && state.accept()) {
+  if (!resuming && soundCheckbox.checked && voiceAvailable() && state.accept()) {
     if (quizEngine.mode === 'explore') speak(currentAnimal);
   }
   updateReadiness();
@@ -1254,9 +1303,22 @@ function returnToWelcome() {
 
 feedBtn?.addEventListener('click', feedCurrentAnimal);
 soundReplayBtn?.addEventListener('click', () => {
-  if (quizEngine.currentQuestion?.animal) {
-    playAnimalSound(quizEngine.currentQuestion.animal);
+  const q = quizEngine.currentQuestion;
+  if (!q) return;
+  if (q.type === 'sound' && q.animal) {
+    playAnimalSound(q.animal);
+    return;
   }
+  if (!soundCheckbox.checked) {
+    notice('Głos lektora jest wyłączony. Włącz go w ustawieniach na ekranie startowym.');
+    return;
+  }
+  if (!voiceAvailable()) {
+    notice('Brak polskiego głosu w tym urządzeniu. Doinstaluj go w ustawieniach systemu (Zamiana tekstu na mowę).');
+    return;
+  }
+  cancelSpeech();
+  speakText(q.speech);
 });
 
 function openSettings() {
@@ -1456,7 +1518,7 @@ soundCheckbox.addEventListener('change', () => {
   cancelSpeech();
   updateVoices();
   setSoundEnabled(soundCheckbox.checked);
-  if (soundCheckbox.checked && polishVoice) speak(currentAnimal);
+  if (soundCheckbox.checked && voiceAvailable()) speak(currentAnimal);
 });
 
 window.addEventListener('keydown', event => {
@@ -1915,6 +1977,8 @@ for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type,
 }, { capture: true, passive: true });
 document.querySelector('main').addEventListener('pointerdown', event => {
   if (phase === 'playing') {
+    // Quiz modes have their own controls; a stray tap must not swap the animal mid-question.
+    if (quizEngine.mode !== 'explore') return;
     if (event.target.closest('#keyboard-dock, #system-ime-bar, #btn-system-ime, #system-ime-input, #keyboard-map-container, #feed-btn, #btn-toggle-keyboard, .parent-button, dialog')) return;
     event.preventDefault();
     if (event.isPrimary && event.button === 0) discoverAnimal(' ');
@@ -1964,7 +2028,7 @@ if (new URLSearchParams(location.search).get('debug') === '1') {
       readiness: state.readiness().phase,
       fullscreen: Boolean(document.fullscreenElement),
       locked: locked && Boolean(document.fullscreenElement) && document.hasFocus() && !document.hidden,
-      voice: polishVoice?.name,
+      voice: polishVoice?.name || (nativeSpeechAvailable() ? 'Android TTS' : undefined),
     }),
   });
 }

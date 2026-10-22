@@ -11,6 +11,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -29,6 +31,9 @@ import androidx.webkit.WebViewAssetLoader;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    // Native text-to-speech: WebView's speechSynthesis usually exposes no voices on Android.
+    private TextToSpeech tts;
+    private volatile boolean ttsReady = false;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     // Track whether the system IME is currently visible to avoid hideSystemUI() loop
     private boolean imeVisible = false;
@@ -39,7 +44,47 @@ public class MainActivity extends Activity {
         return imm != null && imm.isActive();
     }
 
+    private void initSpeech() {
+        tts = new TextToSpeech(getApplicationContext(), status -> {
+            if (status != TextToSpeech.SUCCESS || tts == null) return;
+            int result = tts.setLanguage(new java.util.Locale("pl", "PL"));
+            ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED;
+            tts.setSpeechRate(0.85f);
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override public void onStart(String utteranceId) { }
+                @Override public void onDone(String utteranceId) { notifySpeechDone(utteranceId); }
+                @Override public void onError(String utteranceId) { notifySpeechDone(utteranceId); }
+            });
+        });
+    }
+
+    private void notifySpeechDone(String utteranceId) {
+        mainHandler.post(() -> {
+            if (webView == null) return;
+            webView.evaluateJavascript(
+                "window.__nativeSpeechDone && window.__nativeSpeechDone(" + Integer.parseInt(utteranceId) + ")", null);
+        });
+    }
+
     public class AndroidBridge {
+        @JavascriptInterface
+        public boolean hasSpeech() {
+            return ttsReady;
+        }
+
+        @JavascriptInterface
+        public void speak(String text, int id) {
+            mainHandler.post(() -> {
+                if (tts == null || !ttsReady) { notifySpeechDone(String.valueOf(id)); return; }
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, String.valueOf(id));
+            });
+        }
+
+        @JavascriptInterface
+        public void stopSpeaking() {
+            mainHandler.post(() -> { if (tts != null) tts.stop(); });
+        }
+
         @JavascriptInterface
         public void showSystemKeyboard() {
             mainHandler.post(() -> {
@@ -144,6 +189,7 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
 
+        initSpeech();
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
 
         webView.setWebChromeClient(new WebChromeClient());
@@ -311,6 +357,11 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+            tts = null;
+        }
         if (webView != null) {
             webView.destroy();
         }
