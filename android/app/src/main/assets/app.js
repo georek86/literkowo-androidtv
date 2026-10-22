@@ -427,8 +427,9 @@ function speak(animal) {
   speakText(animal.name);
 }
 
+let forceNoScenery = false;
 function renderAppearance() {
-  const scenery = sceneryCheckbox.checked;
+  const scenery = sceneryCheckbox.checked && !forceNoScenery;
   if (currentAnimal === lastRenderedAnimal && scenery === lastRenderedScenery) return;
   lastRenderedAnimal = currentAnimal;
   lastRenderedScenery = scenery;
@@ -656,7 +657,9 @@ function renderQuizOptions(options, targetChar) {
     btn.addEventListener('click', () => handleQuizInput(opt));
     quizOptionsEl.appendChild(btn);
   }
-  setTimeout(() => quizOptionsEl.querySelector('.quiz-option-btn')?.focus(), 80);
+  // No auto-focus: a ring on the first option looks like a hint ("press this one"), while the highlighted key
+  // on the keyboard shows the real answer. Remote/keyboard users move focus with the arrow keys.
+  quizOptionsEl.querySelector('.quiz-option-btn')?.setAttribute('tabindex', '0');
 }
 
 function renderSpellingSlots(question) {
@@ -698,7 +701,6 @@ function renderSyllableOptions(options, targetSyllable) {
     btn.addEventListener('click', () => handleQuizInput(opt));
     quizOptionsEl.appendChild(btn);
   }
-  setTimeout(() => quizOptionsEl.querySelector('.quiz-option-btn')?.focus(), 80);
 }
 
 let voiceWarningShown = false;
@@ -714,6 +716,8 @@ function warnIfSilent() {
 }
 
 function setupQuizQuestion() {
+  stageEl.classList.remove('show-animal');
+  forceNoScenery = false;
   if (quizEngine.mode === 'explore') {
     if (quizOverlayEl) quizOverlayEl.hidden = true;
     if (animalContentEl) animalContentEl.hidden = false;
@@ -734,6 +738,8 @@ function setupQuizQuestion() {
   const q = quizEngine.nextQuestion();
   if (!q) return;
   warnIfSilent();
+  // First-letter and shadow questions are about the picture, so it must stay visible behind the prompt.
+  stageEl.classList.toggle('show-animal', q.type === 'first-letter' || q.type === 'shadow');
 
   if (quizCelebrationEl) quizCelebrationEl.hidden = true;
   if (quizOverlayEl) quizOverlayEl.hidden = false;
@@ -741,7 +747,7 @@ function setupQuizQuestion() {
   if (soundReplayBtn) {
     // Every question can be heard again; the animal-sound mode replays the sound itself.
     soundReplayBtn.hidden = false;
-    soundReplayBtn.textContent = q.type === 'sound' ? '🔊 Posłuchaj dźwięku' : '🔊 Powtórz polecenie';
+    soundReplayBtn.textContent = q.type === 'sound' ? '🔊 Posłuchaj dźwięku' : (q.type === 'shadow' || q.type === 'first-letter' ? '🔊' : '🔊 Powtórz polecenie');
     soundReplayBtn.setAttribute('aria-label', q.type === 'sound' ? 'Posłuchaj dźwięku jeszcze raz' : 'Powtórz polecenie');
   }
   if (syllablesSlotsEl) syllablesSlotsEl.hidden = true;
@@ -768,6 +774,7 @@ function setupQuizQuestion() {
     quizOptionsEl.hidden = false;
     renderQuizOptions(q.options, q.targetChar);
     showAnimal(q.animal);
+    letterEl.replaceChildren(document.createTextNode('?'));
     stageCaptionEl.textContent = 'PIERWSZA LITERA';
     speakText(q.speech);
   } else if (q.type === 'shadow') {
@@ -776,6 +783,9 @@ function setupQuizQuestion() {
     spellingSlotsEl.hidden = true;
     quizOptionsEl.hidden = false;
     renderQuizOptions(q.options, q.targetChar);
+    // The silhouette filter blackens the whole SVG, so draw the animal alone (no scenery backdrop),
+    // otherwise the "shadow" is just a dark rectangle.
+    forceNoScenery = true;
     showAnimal(q.animal);
     illustrationEl.classList.add('shadow-silhouette');
     letterEl.replaceChildren(document.createTextNode('?'));
@@ -833,6 +843,9 @@ function handleQuizInput(key) {
     if (res.finished) {
       if (quizEngine.mode === 'shadow') {
         illustrationEl.classList.remove('shadow-silhouette');
+        forceNoScenery = false;
+        lastRenderedAnimal = null;
+        renderAppearance(); // bring the scenery back for the reveal
         illustrationEl.classList.add('shadow-reveal');
         playMagicReveal();
       } else if (quizEngine.mode === 'sound') {
@@ -1257,6 +1270,8 @@ stopButton.addEventListener('click', returnToWelcome);
 
 function returnToWelcome() {
   phase = 'welcome';
+  forceNoScenery = false;
+  stageEl.classList.remove('show-animal');
   closeIme();
   if (keyboardDockEl) keyboardDockEl.hidden = true;
   if (btnToggleKeyboard) btnToggleKeyboard.hidden = true;
