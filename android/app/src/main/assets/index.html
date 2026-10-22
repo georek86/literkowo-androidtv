@@ -37,52 +37,50 @@
     <section class="welcome" id="welcome" aria-labelledby="welcome-title">
       <span class="eyebrow"><span class="tiny-leaf" aria-hidden="true"></span> SPOKOJNA ZABAWA RAZEM</span>
       <h1 id="welcome-title">Mała literka.<br>Wielkie <em>odkrycie.</em></h1>
-      <p class="intro">Interaktywna zabawa rodzica z dzieckiem.<br>Dotknij ekranu lub naciśnij klawisz.</p>
+      <p class="intro">Wybierz zabawę, dotknij „Graj” i odkrywaj litery razem ze zwierzątkami.</p>
       <div class="mode-selector-wrap">
-        <span class="mode-selector-label">Tryb zabawy</span>
+        <span class="mode-selector-label">Wybierz zabawę</span>
         <div class="mode-selector" id="mode-selector" role="radiogroup" aria-label="Wybierz tryb zabawy">
           <button type="button" class="mode-pill active" data-mode="explore" role="radio" aria-checked="true">
             <span class="mode-icon">🔍</span>
-            <span class="mode-text"><strong>Odkrywanie</strong><small>Swobodne wciskanie liter</small></span>
+            <span class="mode-text"><strong>Poznaj zwierzęta</strong><small>Naciskaj litery i odkrywaj</small></span>
           </button>
           <button type="button" class="mode-pill" data-mode="guess-letter" role="radio" aria-checked="false">
             <span class="mode-icon">❓</span>
-            <span class="mode-text"><strong>Zgadnij literkę</strong><small>Rozpoznawanie ze słuchu</small></span>
+            <span class="mode-text"><strong>Gdzie jest litera?</strong><small>Posłuchaj i znajdź</small></span>
           </button>
           <button type="button" class="mode-pill" data-mode="first-letter" role="radio" aria-checked="false">
             <span class="mode-icon">🔤</span>
-            <span class="mode-text"><strong>Pierwsza litera</strong><small>Na jaką literę zaczyna się...</small></span>
+            <span class="mode-text"><strong>Pierwsza litera</strong><small>Od jakiej litery zaczyna się nazwa?</small></span>
           </button>
           <button type="button" class="mode-pill" data-mode="spelling" role="radio" aria-checked="false">
             <span class="mode-icon">✏️</span>
-            <span class="mode-text"><strong>Napisz słowo</strong><small>Literowanie prostych słów</small></span>
+            <span class="mode-text"><strong>Napisz słowo</strong><small>Ułóż nazwę zwierzątka</small></span>
           </button>
           <button type="button" class="mode-pill" data-mode="memory" role="radio" aria-checked="false">
             <span class="mode-icon">🎴</span>
-            <span class="mode-text"><strong>Pary (Memory)</strong><small>Dopasuj literę i zwierzę</small></span>
+            <span class="mode-text"><strong>Znajdź pary</strong><small>Litera i zwierzątko</small></span>
           </button>
           <button type="button" class="mode-pill" data-mode="shadow" role="radio" aria-checked="false">
             <span class="mode-icon">🕵️</span>
-            <span class="mode-text"><strong>Cienie</strong><small>Kto się schował?</small></span>
+            <span class="mode-text"><strong>Kto się schował?</strong><small>Zgadnij po cieniu</small></span>
           </button>
           <button type="button" class="mode-pill" data-mode="syllables" role="radio" aria-checked="false">
             <span class="mode-icon">🧩</span>
-            <span class="mode-text"><strong>Sylaby</strong><small>KO - TEK</small></span>
+            <span class="mode-text"><strong>Sylaby</strong><small>Złóż słowo: KO-TEK</small></span>
           </button>
           <button type="button" class="mode-pill" data-mode="sound" role="radio" aria-checked="false">
             <span class="mode-icon">👂</span>
-            <span class="mode-text"><strong>Dźwięki</strong><small>Kto to?</small></span>
+            <span class="mode-text"><strong>Czyj to głos?</strong><small>Posłuchaj i zgadnij</small></span>
           </button>
         </div>
       </div>
       <div class="welcome-actions">
-        <button class="primary-button" id="start" type="button" autofocus>Zaczynamy <span aria-hidden="true">↗</span></button>
-        <button type="button" class="secondary-button btn-welcome-ime" id="btn-welcome-ime" aria-label="Wysuń klawiaturę systemową">
-          <span aria-hidden="true">⌨️</span> <span>Klawiatura systemowa</span>
-        </button>
+        <button class="primary-button" id="start" type="button" autofocus>Graj <span aria-hidden="true">▶</span></button>
       </div>
       <p class="start-note">Wyłącznie wspólnie i pod nadzorem opiekuna.</p>
       <p class="screen-note" id="screen-note">WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2 lat. Wspólna zabawa również jest czasem ekranowym. <a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></p>
+      <details class="welcome-more"><summary>Dźwięk i wygląd</summary>
       <div class="welcome-options">
         <label class="switch-label"><input id="sound" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Głos lektora</label>
         <label class="switch-label"><input id="fullscreen" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Pełny ekran i blokada</label>
@@ -90,6 +88,7 @@
       </div>
       <p class="voice-note" id="voice-note"></p>
       <p class="voice-note" id="touch-note" hidden>Na urządzeniu dotykowym zabawa uruchamia się w oknie. Dotknij obszaru zabawy, aby poznać kolejne zwierzątko.</p>
+      </details>
       <p class="protection-error" id="protection-error" role="status" hidden></p>
     </section>
 

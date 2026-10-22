@@ -757,7 +757,7 @@ function setupQuizQuestion() {
   keyboardHelper.highlightTarget(q.targetChar || (q.letters && q.letters[q.stepIndex]) || (q.targetSyllable && q.targetSyllable[0]));
 
   if (q.type === 'guess-letter') {
-    quizModeNameEl.textContent = 'ZGADNIJ LITERKĘ';
+    quizModeNameEl.textContent = 'GDZIE JEST LITERA?';
     quizPromptTextEl.textContent = q.prompt;
     spellingSlotsEl.hidden = true;
     quizOptionsEl.hidden = false;
@@ -765,7 +765,7 @@ function setupQuizQuestion() {
     letterEl.replaceChildren(document.createTextNode('?'));
     illustrationEl.innerHTML = '<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="70" fill="#d8dfcd"/><text x="100" y="125" font-family="Georgia" font-size="75" font-weight="bold" fill="#50694e" text-anchor="middle">?</text></svg>';
     animalNameEl.textContent = '???';
-    stageCaptionEl.textContent = 'ZGADNIJ LITERKĘ';
+    stageCaptionEl.textContent = 'GDZIE JEST LITERA?';
     speakText(q.speech);
   } else if (q.type === 'first-letter') {
     quizModeNameEl.textContent = 'PIERWSZA LITERA';
@@ -1080,9 +1080,19 @@ function triggerHoldAnimation(onComplete) {
   }, parentHoldDuration);
 }
 
+// On phones, tablets and the Android app the corner button is a plain, visible pause button.
+const directPauseButton = isTouchDevice || Boolean(window.AndroidBridge);
+parentButton.classList.toggle('direct-pause', directPauseButton);
+// Browser fullscreen/keyboard lock make no sense on phones and in the Android app.
+if (directPauseButton) fullscreenCheckbox?.closest('label')?.setAttribute('hidden', '');
+
 function startParentHold(event) {
   if (!['playing', 'finished'].includes(phase) || event.button !== 0 || !event.isPrimary) return;
   event.preventDefault();
+  if (directPauseButton) {
+    if (phase === 'finished') returnToWelcome(); else pause();
+    return;
+  }
   holdPointerId = event.pointerId;
   triggerHoldAnimation(() => phase === 'finished' ? returnToWelcome() : pause());
 }
@@ -1195,8 +1205,8 @@ async function begin(resuming = false) {
   finishSection.hidden = true;
   playInstructionsSection.hidden = false;
   renderAppearance();
-  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? 'Dla rodzica' : 'Dla rodzica · przytrzymaj';
-  parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
+  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? '⏸ Pauza' : 'Dla rodzica · przytrzymaj';
+  parentButton.setAttribute('aria-label', directPauseButton ? 'Wstrzymaj zabawę' : 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wstrzymać zabawę');
   document.body.classList.add('playing');
   phase = 'playing';
   updateKeyboardVisibility();
@@ -1259,8 +1269,8 @@ function finish() {
   document.body.classList.remove('playing');
   document.body.classList.add('sleeping');
   stageEl.hidden = true;
-  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? 'Dla rodzica' : 'Dla rodzica · przytrzymaj';
-  parentButton.setAttribute('aria-label', 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wrócić do początku');
+  parentButton.textContent = (isTouchDevice || window.AndroidBridge) ? '↩ Na start' : 'Dla rodzica · przytrzymaj';
+  parentButton.setAttribute('aria-label', directPauseButton ? 'Wróć na ekran startowy' : 'Przytrzymaj przez 2 sekundy lub naciśnij Esc, aby wrócić do początku');
   setTimeout(() => parentButton.focus(), 50);
 }
 
