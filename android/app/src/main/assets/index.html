@@ -84,7 +84,7 @@
       <p class="start-note">Wyłącznie wspólnie i pod nadzorem opiekuna.</p>
       <p class="screen-note" id="screen-note">WHO nie zaleca siedzącego czasu przed ekranem dzieciom poniżej 2 lat. Wspólna zabawa również jest czasem ekranowym. <a href="https://www.who.int/news-room/detail/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" target="_blank" rel="noreferrer">Zalecenia WHO ↗</a></p>
       <div class="welcome-options">
-        <label class="switch-label"><input id="sound" type="checkbox"><span class="switch" aria-hidden="true"></span> Głos lektora</label>
+        <label class="switch-label"><input id="sound" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Głos lektora</label>
         <label class="switch-label"><input id="fullscreen" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Pełny ekran i blokada</label>
         <label class="switch-label"><input id="scenery" type="checkbox" checked><span class="switch" aria-hidden="true"></span> Zmienna sceneria</label>
       </div>
@@ -176,7 +176,7 @@
   <dialog id="settings" aria-labelledby="settings-title">
     <form method="dialog"><button class="close-button" aria-label="Zamknij ustawienia">×</button></form>
     <span class="eyebrow">CHWILA DLA WAS</span><h2 id="settings-title">Dla rodzica</h2>
-    <p class="dialog-intro">Interaktywna zabawa rodzica lub opiekuna z dzieckiem. Korzystajcie wyłącznie razem, pod stałym nadzorem dorosłego.</p>
+    <p class="dialog-intro">Interaktywna zabawa rodzica lub opiekuna z dzieckiem. Korzystaj z niej wyłącznie razem z dzieckiem, pod stałym nadzorem dorosłego.</p>
     <div class="setting-info"><strong>Małe odkrycia dotykiem i klawiaturą</strong><p>Każda zabawa zaczyna się od losowego zwierzątka. Dotyk, kliknięcie i klawisze bez przypisanej litery losują z całego albumu. Litera losuje wśród pasujących nazw, np. N: nosorożec, niedźwiedź lub nietoperz. Pierwszeństwo mają zwierzątka jeszcze niewidziane w tej zabawie — również po zmianie klawisza lub użyciu dotyku. Gdy wszystkie pasujące zwierzątka zostały już pokazane, wracają w tasowanej kolejności, bez powtórzeń jedno po drugim, jeśli jest wybór. Pod E, I i U jest po jednym zwierzątku — kolejne naciśnięcie ponownie je wita. Nie trzeba używać AltGr: C obejmuje też Ć, L — Ł, S — Ś, a Z — Ź i Ż. Pełne kółko oznacza gotowość do kolejnego odkrycia; szybkie stuknięcia, dodatkowe palce i przytrzymane klawisze są pomijane.</p></div>
     <label class="setting-row" for="setting-profile"><span>Aktywny gracz (Profil rodzeństwa)<small>Osobne gwiazdki, imię i album dla każdego dziecka.</small></span><select id="setting-profile"><option value="profile_1">Gracz 1</option><option value="profile_2">Gracz 2</option></select></label>
     <label class="setting-row" for="setting-child-name"><span>Imię dziecka<small>Wpisz imię, aby pojawiało się w zadaniach literowania (np. ZOSIA, STAŚ).</small></span><input id="setting-child-name" type="text" placeholder="Imię..." maxlength="12" style="border:1px solid #cad4bd;border-radius:9px;padding:8px 12px;font:inherit;background:#f4f5eb;width:120px;"></label>
@@ -225,6 +225,6 @@
     </div>
     <button class="primary-button" id="card-detail-close" type="button">Wróć do albumu</button>
   </dialog>
-  <dialog id="paused" aria-labelledby="paused-title"><span class="eyebrow">MAŁA PRZERWA</span><h2 id="paused-title">Zabawa wstrzymana</h2><p>Wróćcie, kiedy będziecie gotowi.</p><p id="pause-detail"></p><button class="primary-button" id="resume" type="button">Wznów zabawę</button><button class="text-button" id="stop" type="button">Zakończ zabawę</button></dialog>
+  <dialog id="paused" aria-labelledby="paused-title"><span class="eyebrow">MAŁA PRZERWA</span><h2 id="paused-title">Zabawa wstrzymana</h2><p>Wróć, gdy będziesz gotowy.</p><p id="pause-detail"></p><button class="primary-button" id="resume" type="button">Wznów zabawę</button><button class="text-button" id="stop" type="button">Zakończ zabawę</button></dialog>
 </body>
 </html>

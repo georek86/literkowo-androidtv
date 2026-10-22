@@ -1686,3 +1686,35 @@ body.playing.ime-open .keyboard-dock .system-ime-input {
     justify-content: flex-end;
   }
 }
+
+/* Picture questions (shadow, first letter): keep the animal visible between the prompt and the answers. */
+.animal-stage.show-animal .quiz-overlay { background: transparent; padding-top: 44px; }
+.animal-stage.show-animal .quiz-prompt-eyebrow,
+.animal-stage.show-animal .stage-top,
+.animal-stage.show-animal .readiness,
+.animal-stage.show-animal .feed-btn { display: none; }
+.animal-stage.show-animal .quiz-prompt-text { font-size: clamp(18px, 4.4vw, 28px); margin-top: 0; }
+.animal-stage.show-animal .sound-replay-btn { margin-top: 4px; padding: 3px 12px; font-size: 16px; }
+.animal-stage.show-animal .quiz-options { margin: 6px 0 4px; }
+.animal-stage.show-animal .quiz-option-btn { width: 68px; height: 68px; font-size: 34px; }
+.animal-stage.show-animal .animal-content {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+  padding: clamp(96px, 32%, 140px) 0 clamp(96px, 26%, 112px);
+  pointer-events: none;
+}
+.animal-stage.show-animal .big-letter,
+.animal-stage.show-animal .animal-label { display: none; }
+.animal-stage.show-animal .illustration {
+  width: auto;
+  height: 100%;
+  max-height: 260px;
+  aspect-ratio: 1.35;
+  margin-top: 0;
+}
+@media (max-width: 620px) {
+  .animal-stage.show-animal .quiz-overlay { padding-top: 36px; padding-bottom: 18px; }
+  .animal-stage.show-animal .quiz-option-btn { width: 56px; height: 56px; font-size: 28px; border-radius: 16px; }
+  .animal-stage.show-animal .animal-content { padding: 88px 0 84px; }
+}

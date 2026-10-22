@@ -141,6 +141,7 @@ export class AnimalAlbum {
     this.bags = new Map();
     this.seen = new Set([this.current]);
     this.lastByKey = new Map([[this.current.inputKey, this.current]]);
+    this.recentKeys = [this.current.inputKey];
     return this.current;
   }
   shuffle(pool) {
@@ -164,13 +165,28 @@ export class AnimalAlbum {
       if (alternative < 0) bag = this.shuffle(pool.filter(animal => animal !== previous));
       else [bag[alternative], bag[bag.length - 1]] = [bag.at(-1), bag[alternative]];
     }
-    const unseenIndex = bag.findLastIndex(animal => !this.seen.has(animal));
-    if (unseenIndex >= 0) [bag[unseenIndex], bag[bag.length - 1]] = [bag.at(-1), bag[unseenIndex]];
+    if (!group.length) {
+      // Random draw: avoid repeating a letter that was shown in the last few draws.
+      const recent = new Set(this.recentKeys);
+      const allowed = animal => !recent.has(animal.inputKey);
+      let index = bag.findLastIndex(animal => allowed(animal) && !this.seen.has(animal));
+      if (index < 0) index = bag.findLastIndex(allowed);
+      if (index < 0) {
+        bag = this.shuffle(pool.filter(allowed));
+        index = bag.findLastIndex(animal => !this.seen.has(animal));
+        if (index < 0) index = bag.length - 1;
+      }
+      [bag[index], bag[bag.length - 1]] = [bag.at(-1), bag[index]];
+    } else {
+      const unseenIndex = bag.findLastIndex(animal => !this.seen.has(animal));
+      if (unseenIndex >= 0) [bag[unseenIndex], bag[bag.length - 1]] = [bag.at(-1), bag[unseenIndex]];
+    }
     const animal = bag.pop();
     this.seen.add(animal);
     this.bags.set(bagKey, bag);
     this.current = animal;
     this.lastByKey.set(animal.inputKey, animal);
+    this.recentKeys = [animal.inputKey, ...this.recentKeys].slice(0, 3);
     return animal;
   }
 }

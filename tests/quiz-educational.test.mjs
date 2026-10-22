@@ -318,3 +318,15 @@ test('animal-feed module maps treats and provides clean SVGs', () => {
   const defaultFood = getFoodForAnimal({ name: 'jakis_inny' });
   assert.equal(defaultFood.foodKey, 'jablko');
 });
+
+import { AnimalAlbum as RandomAlbum } from '../animals.js';
+test('random draws (space/unassigned key) never repeat a first letter within 3 draws', () => {
+  for (let run = 0; run < 20; run++) {
+    const album = new RandomAlbum();
+    const keys = [album.current.inputKey];
+    for (let i = 0; i < 300; i++) keys.push(album.next(' ').inputKey);
+    keys.forEach((key, i) => {
+      for (let back = 1; back <= 2 && i - back >= 0; back++) assert.notEqual(key, keys[i - back], `repeat of ${key} at ${i}`);
+    });
+  }
+});
